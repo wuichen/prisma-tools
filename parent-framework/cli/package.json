@@ -1,0 +1,48 @@
+{
+  "name": "parent",
+  "version": "0.0.0",
+  "author": "I Chen Wu",
+  "bin": {
+    "parent": "./bin/run"
+  },
+  "bugs": "https://github.com/parent-framework/parent/issues",
+  "dependencies": {
+    "@oclif/command": "^1",
+    "@oclif/config": "^1",
+    "@oclif/plugin-help": "^3",
+    "ncp": "^2.0.0"
+  },
+  "devDependencies": {
+    "@oclif/dev-cli": "^1",
+    "globby": "^10"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "/bin",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json",
+    "/src"
+  ],
+  "homepage": "https://github.com/parent-framework/parent",
+  "keywords": [
+    "oclif"
+  ],
+  "license": "MIT",
+  "main": "src/index.js",
+  "oclif": {
+    "commands": "./src/commands",
+    "bin": "parent",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
+  },
+  "repository": "parent-framework/parent",
+  "scripts": {
+    "postpack": "rm -f oclif.manifest.json",
+    "prepack": "oclif-dev manifest && oclif-dev readme",
+    "test": "echo NO TESTS",
+    "version": "oclif-dev readme && git add README.md"
+  }
+}
