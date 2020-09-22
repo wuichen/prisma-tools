@@ -165,6 +165,105 @@ const updatePrismaAdminForm = () =>
         console.log('Cant find form props');
       }
 
+      // Update Wrapper Card Start to div
+      const wrapperCardStartMatch = formString.match(/<Card\b((?:[^<>])*)>/g);
+      if (wrapperCardStartMatch && wrapperCardStartMatch.length > 0) {
+        const newWrapperCardStart =
+          "<div style={action === 'create' ? { maxWidth: '1200px', maxHeight: '100vh', minWidth: '50vw' } : {}}>";
+        formString = formString.replace(
+          wrapperCardStartMatch[0],
+          newWrapperCardStart,
+        );
+        console.log('Found wraper card start  and edited');
+      } else {
+        console.log('Cant find wraper card start');
+      }
+
+      // Update Wrapper Card End to div
+      if (formString.includes('</Card>')) {
+        const newWrapperCardEnd = '</div>';
+        formString = formString.replace('</Card>', newWrapperCardEnd);
+        console.log('Found wraper card end  and edited');
+      } else {
+        console.log('Cant find wraper card end');
+      }
+
+      // Update CardFooter to div
+      if (formString.includes('<CardFooter')) {
+        const newCardFooterStart = '<div';
+        formString = formString.replace('<CardFooter', newCardFooterStart);
+        console.log('Found card footer start  and edited');
+      } else {
+        console.log('Cant find card footer start');
+      }
+
+      // Update CardFooter to div
+      if (formString.includes('</CardFooter>')) {
+        const newCardFooterEnd = '</div>';
+        formString = formString.replace('</CardFooter>', newCardFooterEnd);
+        console.log('Found card footer end  and edited');
+      } else {
+        console.log('Cant find card footer end');
+      }
+
+      // Update CardBody to div
+      if (formString.includes('<CardBody')) {
+        const newCardBodyStart = '<div';
+        formString = formString.replace('<CardBody', newCardBodyStart);
+        console.log('Found card body start  and edited');
+      } else {
+        console.log('Cant find card body start');
+      }
+
+      // Update CardBody to div
+      if (formString.includes('</CardBody>')) {
+        const newCardBodyEnd = '</div>';
+        formString = formString.replace('</CardBody>', newCardBodyEnd);
+        console.log('Found card body end  and edited');
+      } else {
+        console.log('Cant find card body end');
+      }
+
+      // Update Row to use form field cards
+      if (formString.includes('<Row between="lg">')) {
+        const newRowStart = `{ui?.forms.map((form, index) => {
+          const modelFields = model.fields.filter(
+            (field) =>
+              ((action !== 'view' && field[action]) ||
+                (['update', 'view'].includes(action) && (field.read || field.update))) &&
+              !field.list &&
+              !field.relationField,
+          );
+          if (modelFields?.length > 0) {
+            return (
+              <>
+                <h6>{form.title}</h6>
+
+                <Card key={index}>
+                  <CardBody><Row between="lg">`;
+        formString = formString.replace('<Row between="lg">', newRowStart);
+        console.log('Found row start and edited');
+      } else {
+        console.log('Cant find row start');
+      }
+
+      // Update Row to use form field cards
+      if (formString.includes('</Row>')) {
+        const newRowEnd = `</Row>
+                </CardBody>
+              </Card>
+            </>
+          );
+        } else {
+          return null;
+        }
+        })}`;
+        formString = formString.replace('</Row>', newRowEnd);
+        console.log('Found row end and edited');
+      } else {
+        console.log('Cant find row end');
+      }
+
       fs.writeFileSync(formLocation, formString);
 
       resolve();
