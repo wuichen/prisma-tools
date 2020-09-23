@@ -2,6 +2,9 @@ const { Command, flags } = require('@oclif/command');
 const path = require('path');
 const ncp = require('ncp').ncp;
 const fs = require('fs');
+const chalk = require('chalk');
+
+const { format, Options: PrettierOptions } = require('prettier');
 
 const cloneSource = () =>
   new Promise(async (resolve, reject) => {
@@ -11,7 +14,7 @@ const cloneSource = () =>
     );
     const codeDestination = path.join(__dirname, '../../../example');
     await ncp(codeSource, codeDestination);
-    console.log('Cloned full-stack-nextjs');
+    console.log(chalk.green('Successfully cloned full-stack-nextjs'));
     resolve();
   });
 
@@ -24,15 +27,46 @@ const updatePrismaSchema = () =>
       );
       const prismaSchema = fs.readFileSync(prismaSchemaLocation);
       let prismaSchemaString = prismaSchema.toString();
-
+      prismaSchemaString = prismaSchemaString.replace(
+        'model User {',
+        'model User {\ncompanies Company[]\nmembers   Member[]',
+      );
       prismaSchemaString = prismaSchemaString.replace(
         'provider = "sqlite"',
         'provider = "postgresql"',
       );
-      prismaSchemaString = prismaSchemaString + `enum OwnerType {\nUser\n}`;
+      prismaSchemaString =
+        prismaSchemaString +
+        `enum OwnerType {\nUser\n} 
+      model Company {
+        id      Int      @default(autoincrement()) @id
+        title   String
+        slug    String   @unique
+        owner   User     @relation(fields: [ownerId], references: [id])
+        ownerId Int
+        members Member[]
+      }
+      
+      model Member {
+        id        Int     @default(autoincrement()) @id
+        company   Company @relation(fields: [companyId], references: [id])
+        companyId Int
+        user      User    @relation(fields: [userId], references: [id])
+        userId    Int
+        role      Role    @relation(fields: [roleId], references: [id])
+        roleId    Int
+      }
+      
+      model Role {
+        id      Int      @default(autoincrement()) @id
+        schema  Json
+        title   String   @unique
+        members Member[]
+      }
+      `;
 
       fs.writeFileSync(prismaSchemaLocation, prismaSchemaString);
-      console.log('Replaced original schema');
+      console.log(chalk.green('Successfully replaced original schema'));
       resolve();
     }, 500);
   });
@@ -52,11 +86,15 @@ const updatePackageJson = () =>
       };
       packageJson.dependencies = {
         ...packageJson.dependencies,
-        '@paljs/cli': '1.5.1',
+        '@paljs/cli': '^1.5.1',
+        'jwt-decode': '^3.0.0',
       };
-      fs.writeFileSync(packageJsonLocation, JSON.stringify(packageJson));
-      console.log('Edited package.json');
+      fs.writeFileSync(
+        packageJsonLocation,
+        JSON.stringify(packageJson, null, 2),
+      );
 
+      console.log(chalk.green('Successfully edited package.json'));
       resolve();
     }, 500);
   });
@@ -92,6 +130,12 @@ const updatePalConfig = () =>
         },
       };
       `;
+      overridePalJsConfig = format(overridePalJsConfig, {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        parser: 'babel-ts',
+      });
       fs.writeFileSync(palJsConfigLocation, overridePalJsConfig);
       resolve();
     }, 500);
@@ -109,7 +153,115 @@ const clonePrismaAdmin = () =>
         '../../../example/src/Components/PrismaAdmin',
       );
       await ncp(adminSource, adminDestination);
-      console.log('Cloned Prisma Admin');
+      console.log(
+        chalk.green(
+          'Successfully cloned PrismaAdmin to Components/PrismaAdmin',
+        ),
+      );
+      resolve();
+    }, 500);
+  });
+
+const updateSchemaQueries = () =>
+  new Promise((resolve, reject) => {
+    setTimeout(async () => {
+      const schemQueriesLocation = path.join(
+        __dirname,
+        '../../../example/src/Components/PrismaAdmin/SchemaQueries.ts',
+      );
+      const schemQueriesBuffer = fs.readFileSync(schemQueriesLocation);
+      let schemQueriesString = schemQueriesBuffer.toString();
+
+      const oldQuery = 'query getSchema {';
+      if (schemQueriesString.includes(oldQuery)) {
+        const newQuery = 'query getSchema($title: String!) {';
+        schemQueriesString = schemQueriesString.replace(oldQuery, newQuery);
+        console.log(
+          chalk.green(
+            'Successfully updated query getSchema Components/PrismaAdmin/SchemaQueries.ts',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to updated query getSchema Components/PrismaAdmin/SchemaQueries.ts',
+          ),
+        );
+      }
+
+      const oldString = 'getSchema {';
+      if (schemQueriesString.includes(oldString)) {
+        const newString = 'getSchema(title: $title) {';
+        schemQueriesString = schemQueriesString.replace(oldString, newString);
+        console.log(
+          chalk.green(
+            'Successfully updated query name getSchema Components/PrismaAdmin/SchemaQueries.ts',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to updated query name getSchema Components/PrismaAdmin/SchemaQueries.ts',
+          ),
+        );
+      }
+
+      schemQueriesString = format(schemQueriesString, {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        parser: 'babel-ts',
+      });
+      fs.writeFileSync(schemQueriesLocation, schemQueriesString);
+
+      resolve();
+    }, 500);
+  });
+
+const updateSettings = () =>
+  new Promise((resolve, reject) => {
+    setTimeout(async () => {
+      const settingsLocation = path.join(
+        __dirname,
+        '../../../example/src/Components/PrismaAdmin/Settings/index.tsx',
+      );
+      const settingsBuffer = fs.readFileSync(settingsLocation);
+      let settingsString = settingsBuffer.toString();
+
+      const oldString = 'export const Settings: React.FC = () => {';
+      if (settingsString.includes(oldString)) {
+        const newString =
+          `import { useRole } from 'utils/middleware';\n` +
+          oldString +
+          `const role = useRole();
+            const { data } = useQuery<{ getSchema: ContextProps['schema'] }>(GET_SCHEMA, {
+              variables: {
+                title: role,
+              },
+              skip: !role,
+            });`;
+        settingsString = settingsString.replace(oldString, newString);
+        console.log(
+          chalk.green(
+            'Successfully updated Components/PrismaAdmin/Settings/index.tsx',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to updated Components/PrismaAdmin/Settings/index.tsx',
+          ),
+        );
+      }
+
+      settingsString = format(settingsString, {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        parser: 'babel-ts',
+      });
+      fs.writeFileSync(settingsLocation, settingsString);
+
       resolve();
     }, 500);
   });
@@ -117,13 +269,26 @@ const clonePrismaAdmin = () =>
 const addCustomElements = () => {
   new Promise((resolve, reject) => {
     setTimeout(async () => {
-      const headerElementSource = path.join(__dirname, '../components/Header');
+      const headerElementSource = path.join(
+        __dirname,
+        '../templates/components/Header',
+      );
       const headerElementDestination = path.join(
         __dirname,
         '../../../example/src/Components/Header',
       );
       await ncp(headerElementSource, headerElementDestination);
-      console.log('Cloned Header component');
+      console.log(
+        chalk.green('Successfully cloned Header to src/Components/Header'),
+      );
+
+      const utilsSource = path.join(__dirname, '../templates/utils');
+      const utilsDestination = path.join(
+        __dirname,
+        '../../../example/src/utils',
+      );
+      await ncp(utilsSource, utilsDestination);
+      console.log(chalk.green('Successfully cloned utils to src/utils'));
 
       resolve();
     }, 500);
@@ -141,30 +306,43 @@ const updatePrismaAdminForm = () =>
       let formString = formBuffer.toString();
 
       // Add props interface
-
-      if (formString.includes('interface FormProps {')) {
-        const newFormPropsInterface = 'interface FormProps {' + '\n ui?: any;';
+      const oldFormPropsInterface = 'interface FormProps {';
+      if (formString.includes(oldFormPropsInterface)) {
+        const newFormPropsInterface = oldFormPropsInterface + '\n ui?: any;';
         formString = formString.replace(
-          'interface FormProps {',
+          oldFormPropsInterface,
           newFormPropsInterface,
         );
-        console.log('form props interface and edited');
+        console.log(
+          chalk.green(
+            'Successfully updated interface FormProps in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find form props interface');
+        console.log(
+          chalk.red(
+            'Failed to update interface FormProps in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       }
 
       // Add props
-      if (formString.includes('const Form: React.FC<FormProps> = ({')) {
-        const newFormProps = 'const Form: React.FC<FormProps> = ({' + '\n ui,';
-        formString = formString.replace(
-          'const Form: React.FC<FormProps> = ({',
-          newFormProps,
+      const oldFormProps = 'const Form: React.FC<FormProps> = ({';
+      if (formString.includes(oldFormProps)) {
+        const newFormProps = oldFormProps + '\n ui,';
+        formString = formString.replace(oldFormProps, newFormProps);
+        console.log(
+          chalk.green(
+            'Successfully updated FormProps in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
         );
-        console.log('form props and edited');
       } else {
-        console.log('Cant find form props');
+        console.log(
+          chalk.red(
+            'Failed to update FormProps in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       }
-
       // Update Wrapper Card Start to div
       const wrapperCardStartMatch = formString.match(/<Card\b((?:[^<>])*)>/g);
       if (wrapperCardStartMatch && wrapperCardStartMatch.length > 0) {
@@ -174,11 +352,18 @@ const updatePrismaAdminForm = () =>
           wrapperCardStartMatch[0],
           newWrapperCardStart,
         );
-        console.log('Found wraper card start  and edited');
+        console.log(
+          chalk.green(
+            'Successfully updated Card Wrapper in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find wraper card start');
+        console.log(
+          chalk.red(
+            'Failed to update Card Wrapper in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       }
-
       // Update Wrapper Card End to div
       if (formString.includes('</Card>')) {
         const newWrapperCardEnd = '</div>';
@@ -189,43 +374,80 @@ const updatePrismaAdminForm = () =>
       }
 
       // Update CardFooter to div
-      if (formString.includes('<CardFooter')) {
+      const oldCardFooterStart = '<CardFooter';
+      if (formString.includes(oldCardFooterStart)) {
         const newCardFooterStart = '<div';
-        formString = formString.replace('<CardFooter', newCardFooterStart);
-        console.log('Found card footer start  and edited');
+        formString = formString.replace(oldCardFooterStart, newCardFooterStart);
+        console.log(
+          chalk.green(
+            'Successfully updated CardFooter Start in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find card footer start');
+        console.log(
+          chalk.red(
+            'Failed to update CardFooter Start in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       }
 
       // Update CardFooter to div
-      if (formString.includes('</CardFooter>')) {
+      const oldCardFooterEnd = '</CardFooter>';
+      if (formString.includes(oldCardFooterEnd)) {
         const newCardFooterEnd = '</div>';
-        formString = formString.replace('</CardFooter>', newCardFooterEnd);
-        console.log('Found card footer end  and edited');
+        formString = formString.replace(oldCardFooterEnd, newCardFooterEnd);
+
+        console.log(
+          chalk.green(
+            'Successfully updated CardFooter End in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find card footer end');
+        console.log(
+          chalk.red(
+            'Failed to update CardFooter End in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       }
 
       // Update CardBody to div
       if (formString.includes('<CardBody')) {
         const newCardBodyStart = '<div';
         formString = formString.replace('<CardBody', newCardBodyStart);
-        console.log('Found card body start  and edited');
+        console.log(
+          chalk.green(
+            'Successfully updated CardBody Start in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find card body start');
+        console.log(
+          chalk.red(
+            'Failed to update CardBody Start in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       }
 
       // Update CardBody to div
-      if (formString.includes('</CardBody>')) {
+      const oldCardBodyEnd = '</CardBody>';
+      if (formString.includes(oldCardBodyEnd)) {
         const newCardBodyEnd = '</div>';
-        formString = formString.replace('</CardBody>', newCardBodyEnd);
-        console.log('Found card body end  and edited');
+        formString = formString.replace(oldCardBodyEnd, newCardBodyEnd);
+        console.log(
+          chalk.green(
+            'Successfully updated CardBody End in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find card body end');
+        console.log(
+          chalk.red(
+            'Failed to update CardBody End in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       }
 
       // Update Row to use form field cards
-      if (formString.includes('<Row between="lg">')) {
+      const oldRowStart = '<Row between="lg">';
+      if (formString.includes(oldRowStart)) {
         const newRowStart = `{ui?.forms.map((form, index) => {
           const modelFields = model.fields.filter(
             (field) =>
@@ -241,14 +463,23 @@ const updatePrismaAdminForm = () =>
 
                 <Card key={index}>
                   <CardBody><Row between="lg">`;
-        formString = formString.replace('<Row between="lg">', newRowStart);
-        console.log('Found row start and edited');
+        formString = formString.replace(oldRowStart, newRowStart);
+        console.log(
+          chalk.green(
+            'Successfully updated Row Start in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find row start');
+        console.log(
+          chalk.red(
+            'Failed to update Row Start in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       }
 
       // Update Row to use form field cards
-      if (formString.includes('</Row>')) {
+      const oldRowEnd = '</Row>';
+      if (formString.includes(oldRowEnd)) {
         const newRowEnd = `</Row>
                 </CardBody>
               </Card>
@@ -258,12 +489,26 @@ const updatePrismaAdminForm = () =>
           return null;
         }
         })}`;
-        formString = formString.replace('</Row>', newRowEnd);
-        console.log('Found row end and edited');
+        formString = formString.replace(oldRowEnd, newRowEnd);
+        console.log(
+          chalk.green(
+            'Successfully updated Row End in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find row end');
+        console.log(
+          chalk.red(
+            'Failed to update Row End in src/Components/PrismaAdmin/PrismaTable/Table/Form/index.tsx',
+          ),
+        );
       }
 
+      formString = format(formString, {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        parser: 'babel-ts',
+      });
       fs.writeFileSync(formLocation, formString);
 
       resolve();
@@ -289,23 +534,43 @@ const updatePrismaAdminTable = () =>
           'interface TableProps {',
           newTablePropsInterface,
         );
-        console.log('table props interface and edited');
+        console.log(
+          chalk.green(
+            'Successfully updated interface TableProps in src/Components/PrismaAdmin/PrismaTable/Table/index.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find table props interface');
+        console.log(
+          chalk.green(
+            'Failed to update interface TableProps in src/Components/PrismaAdmin/PrismaTable/Table/index.tsx',
+          ),
+        );
       }
 
       // Add props
-      if (tableString.includes('const Table: React.FC<TableProps> = ({')) {
-        const newTableProps =
-          'const Table: React.FC<TableProps> = ({' + '\n ui,';
-        tableString = tableString.replace(
-          'const Table: React.FC<TableProps> = ({',
-          newTableProps,
+      const oldTableProps = 'const Table: React.FC<TableProps> = ({';
+      if (tableString.includes(oldTableProps)) {
+        const newTableProps = oldTableProps + '\n ui,';
+        tableString = tableString.replace(oldTableProps, newTableProps);
+
+        console.log(
+          chalk.green(
+            'Successfully updated TableProps in src/Components/PrismaAdmin/PrismaTable/Table/index.tsx',
+          ),
         );
-        console.log('table props and edited');
       } else {
-        console.log('Cant find table props');
+        console.log(
+          chalk.green(
+            'Failed to update TableProps in src/Components/PrismaAdmin/PrismaTable/Table/index.tsx',
+          ),
+        );
       }
+      tableString = format(tableString, {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        parser: 'babel-ts',
+      });
 
       fs.writeFileSync(tableLocation, tableString);
 
@@ -332,27 +597,47 @@ const updatePrismaAdminEditRecord = () =>
           'interface EditRecordProps {',
           newEditRecordPropsInterface,
         );
-        console.log('editRecord props interface and edited');
+
+        console.log(
+          chalk.green(
+            'Successfully updated interface EditRecordProps in src/Components/PrismaAdmin/PrismaTable/EditRecord.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find editRecord props interface');
+        console.log(
+          chalk.red(
+            'Failed to updated interface EditRecordProps in src/Components/PrismaAdmin/PrismaTable/EditRecord.tsx',
+          ),
+        );
       }
 
       // Add props
-      if (
-        editRecordString.includes(
-          'const EditRecord: React.FC<EditRecordProps> = ({',
-        )
-      ) {
-        const newEditRecordProps =
-          'const EditRecord: React.FC<EditRecordProps> = ({' + '\n ui,';
+      const oldEditRecordPropsString =
+        'const EditRecord: React.FC<EditRecordProps> = ({';
+      if (editRecordString.includes(oldEditRecordPropsString)) {
+        const newEditRecordPropsString = oldEditRecordPropsString + '\n ui,';
         editRecordString = editRecordString.replace(
-          'const EditRecord: React.FC<EditRecordProps> = ({',
-          newEditRecordProps,
+          oldEditRecordPropsString,
+          newEditRecordPropsString,
         );
-        console.log('editRecord props and edited');
+        console.log(
+          chalk.green(
+            'Successfully updated EditRecordProps in src/Components/PrismaAdmin/PrismaTable/EditRecord.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find editRecord props');
+        console.log(
+          chalk.red(
+            'Failed to updated EditRecordProps in src/Components/PrismaAdmin/PrismaTable/EditRecord.tsx',
+          ),
+        );
       }
+      editRecordString = format(editRecordString, {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        parser: 'babel-ts',
+      });
 
       fs.writeFileSync(editRecordLocation, editRecordString);
 
@@ -383,9 +668,17 @@ const updatePrismaAdminDynamicTable = () =>
           createFormMatch[0],
           newCreateForm,
         );
-        console.log('Found create form and edited');
+        console.log(
+          chalk.green(
+            'Successfully added Header before Create Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find create form');
+        console.log(
+          chalk.red(
+            'Failed to add Header before Create Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       }
 
       // Edit EditRecord
@@ -401,9 +694,18 @@ const updatePrismaAdminDynamicTable = () =>
           updateFormMatch[0],
           newUpdateForm,
         );
-        console.log('Found update form and edited');
+
+        console.log(
+          chalk.green(
+            'Successfully added Header before EditRecord in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find update form');
+        console.log(
+          chalk.red(
+            'Failed to add Header before EditRecord in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       }
 
       // Edit Table
@@ -417,43 +719,71 @@ const updatePrismaAdminDynamicTable = () =>
           listTableMatch[0],
           newListTable,
         );
-        console.log('Found list table and edited');
+
+        console.log(
+          chalk.green(
+            'Successfully added Header before Table in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find list table');
+        console.log(
+          chalk.green(
+            'Failed to add Header before Table in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       }
 
       // Add props interface
-
-      if (dynamicTableString.includes('interface DynamicTableProps {')) {
-        const newDynamicTablePropsInterface =
-          'interface DynamicTableProps {' +
-          '\n ui?: any; \n inModal?: boolean;';
+      const oldPropsInterfaceString = 'interface DynamicTableProps {';
+      if (dynamicTableString.includes(oldPropsInterfaceString)) {
+        const newPropsInterfaceString =
+          oldPropsInterfaceString + '\n ui?: any; \n inModal?: boolean;';
         dynamicTableString = dynamicTableString.replace(
-          'interface DynamicTableProps {',
-          newDynamicTablePropsInterface,
+          oldPropsInterfaceString,
+          newPropsInterfaceString,
         );
-        console.log('dynamic table props interface and edited');
+        console.log(
+          chalk.green(
+            'Successfully updated interface DynamicTableProps in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find dynamic table props interface');
+        console.log(
+          chalk.red(
+            'Failed to update interface DynamicTableProps in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       }
 
       // Add props
-      if (
-        dynamicTableString.includes(
-          'const DynamicTable: React.FC<DynamicTableProps> = ({',
-        )
-      ) {
-        const newDynamicTableProps =
-          'const DynamicTable: React.FC<DynamicTableProps> = ({' +
-          '\n ui,inModal,';
+      const oldDynamicTablePropsString =
+        'const DynamicTable: React.FC<DynamicTableProps> = ({';
+      if (dynamicTableString.includes(oldDynamicTablePropsString)) {
+        const newDynamicTablePropsString =
+          oldDynamicTablePropsString + '\n ui,inModal,';
         dynamicTableString = dynamicTableString.replace(
-          'const DynamicTable: React.FC<DynamicTableProps> = ({',
-          newDynamicTableProps,
+          oldDynamicTablePropsString,
+          newDynamicTablePropsString,
         );
-        console.log('dynamic table props and edited');
+        console.log(
+          chalk.green(
+            'Successfully updated DynamicTableProps in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       } else {
-        console.log('Cant find dynamic table props');
+        console.log(
+          chalk.red(
+            'Failed to update DynamicTableProps in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
       }
+
+      dynamicTableString = format(dynamicTableString, {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        parser: 'babel-ts',
+      });
 
       fs.writeFileSync(dynamicTableLocation, dynamicTableString);
       resolve();
@@ -471,6 +801,8 @@ class Init extends Command {
     await updatePrismaAdminTable();
     await updatePrismaAdminEditRecord();
     await addCustomElements();
+    await updateSettings();
+    await updateSchemaQueries();
   }
 }
 
