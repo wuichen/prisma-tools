@@ -37,32 +37,39 @@ const updatePrismaSchema = () =>
       );
       prismaSchemaString =
         prismaSchemaString +
-        `enum OwnerType {\nUser\n} 
-      model Company {
-        id      Int      @default(autoincrement()) @id
-        title   String
-        slug    String   @unique
-        owner   User     @relation(fields: [ownerId], references: [id])
-        ownerId Int
-        members Member[]
-      }
-      
-      model Member {
-        id        Int     @default(autoincrement()) @id
-        company   Company @relation(fields: [companyId], references: [id])
-        companyId Int
-        user      User    @relation(fields: [userId], references: [id])
-        userId    Int
-        role      Role    @relation(fields: [roleId], references: [id])
-        roleId    Int
-      }
-      
-      model Role {
-        id      Int      @default(autoincrement()) @id
-        schema  Json
-        title   String   @unique
-        members Member[]
-      }
+        `model Company {
+          id        Int      @default(autoincrement()) @id
+          title     String
+          createdAt DateTime @default(now())
+          updatedAt DateTime @updatedAt
+          owner     User     @relation(fields: [ownerId], references: [id])
+          ownerId   Int
+          members   Member[]
+        }
+        
+        model Member {
+          id        Int      @default(autoincrement()) @id
+          user      User     @relation(fields: [userId], references: [id])
+          userId    Int
+          createdAt DateTime @default(now())
+          updatedAt DateTime @updatedAt
+          role      Role     @relation(fields: [roleId], references: [id])
+          roleId    Int
+          company   Company  @relation(fields: [companyId], references: [id])
+          companyId Int
+        }
+        
+        model Role {
+          id      Int      @default(autoincrement()) @id
+          members Member[]
+          schema  Json
+          title   String   @unique
+        }
+        
+        enum OwnerType {
+          User
+          Company
+        }
       `;
 
       fs.writeFileSync(prismaSchemaLocation, prismaSchemaString);
@@ -71,6 +78,46 @@ const updatePrismaSchema = () =>
     }, 500);
   });
 
+const updateLayout = () =>
+  new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const layoutIndexLocation = path.join(
+        __dirname,
+        '../../../example/src/Layouts/Admin/index.tsx',
+      );
+
+      const layoutIndexBuffer = fs.readFileSync(layoutIndexLocation);
+      let layoutIndexString = layoutIndexBuffer.toString();
+      layoutIndexString = layoutIndexString.replace(
+        'useEffect(() => {',
+        `useEffect(() => {
+        if (router?.pathname.includes('parent-builder')) {
+          return;
+        }`,
+      );
+
+      layoutIndexString = layoutIndexString.replace(
+        '[loading, userData]);',
+        `[loading, userData]);if (router?.pathname.includes('parent-builder')) {
+          return <>{children}</>;
+        }`,
+      );
+
+      layoutIndexString = format(layoutIndexString, {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        parser: 'babel-ts',
+      });
+
+      fs.writeFileSync(layoutIndexLocation, layoutIndexString);
+
+      console.log(
+        chalk.green('Successfully Admin Layout in src/Layout/Admin/index.tsx'),
+      );
+      resolve();
+    }, 500);
+  });
 const updatePackageJson = () =>
   new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -87,7 +134,8 @@ const updatePackageJson = () =>
       packageJson.dependencies = {
         ...packageJson.dependencies,
         '@paljs/cli': '^1.5.1',
-        'jwt-decode': '^3.0.0',
+        'jwt-decode': '^3.0.0-beta.2',
+        lowdb: '^1.0.0',
       };
       fs.writeFileSync(
         packageJsonLocation,
@@ -271,7 +319,7 @@ const addCustomElements = () => {
     setTimeout(async () => {
       const headerElementSource = path.join(
         __dirname,
-        '../templates/components/Header',
+        '../templates/src/components/Header',
       );
       const headerElementDestination = path.join(
         __dirname,
@@ -282,13 +330,34 @@ const addCustomElements = () => {
         chalk.green('Successfully cloned Header to src/Components/Header'),
       );
 
-      const utilsSource = path.join(__dirname, '../templates/utils');
+      const utilsSource = path.join(__dirname, '../templates/src/utils');
       const utilsDestination = path.join(
         __dirname,
         '../../../example/src/utils',
       );
       await ncp(utilsSource, utilsDestination);
       console.log(chalk.green('Successfully cloned utils to src/utils'));
+
+      const dockerSource = path.join(
+        __dirname,
+        '../templates/docker-compose.yml',
+      );
+      const dockerDestination = path.join(
+        __dirname,
+        '../../../example/docker-compose.yml',
+      );
+      await ncp(dockerSource, dockerDestination);
+      console.log(chalk.green('Successfully cloned docker-compose to root'));
+
+      const prismaEnvSource = path.join(__dirname, '../templates/prisma/.env');
+      const prismaEnvDestination = path.join(
+        __dirname,
+        '../../../example/prisma/.env',
+      );
+      await ncp(prismaEnvSource, prismaEnvDestination);
+      console.log(
+        chalk.green('Successfully replaced prisma env to prisma/.env'),
+      );
 
       resolve();
     }, 500);
