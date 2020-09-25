@@ -6,13 +6,18 @@ import { Tabs, Tab } from '@paljs/ui/Tabs';
 import { Card, CardBody } from '@paljs/ui/Card';
 import low from 'lowdb';
 import LocalStorage from 'lowdb/adapters/LocalStorage';
-import defaultSettings from '../../../../../prisma/adminSettings.json';
 import styled from 'styled-components';
-import { Settings } from '@paljs/admin';
+import { Settings } from 'Components/PrismaAdmin/Settings';
 import Select from '@paljs/ui/Select';
 import Row from '@paljs/ui/Row';
 import Col from '@paljs/ui/Col';
 import { useRouter } from 'next/router';
+import {
+  GET_PARENT_OWNER,
+  CREATE_PARENT_OWNER,
+} from 'Components/PrismaAdmin/SchemaQueries';
+import { useQuery, useMutation } from '@apollo/client';
+import adminSettings from '../../../../../prisma/adminSettings.json';
 const Input = styled(InputGroup)`
   margin-bottom: 10px;
 `;
@@ -22,7 +27,7 @@ export const PagesPath = ({
   currentSettings,
   setCurrentModelSetting,
   currentModelSetting,
-  ownerType,
+  owner,
   pagesPath,
   modelSelect,
   db,
@@ -40,9 +45,8 @@ export const PagesPath = ({
   ]);
   useEffect(() => {
     setCurrentModelSetting(
-      pageModels[pageModelIndex]?.uiPlugins?.pagesPath[ownerType][
-        pagesPath.name
-      ]?.self,
+      pageModels[pageModelIndex]?.uiPlugins?.pagesPath[owner][pagesPath.name]
+        ?.self,
     );
   }, [pageModelIndex]);
   console.log(currentModelSetting);
@@ -51,8 +55,8 @@ export const PagesPath = ({
       <Tabs
         onSelect={(index) => {
           // const model = pageModels[index];
-          // if (model?.uiPlugins?.pagesPath[ownerType][pagesPath.name]?.self) {
-          //   setCurrentModelSetting(model?.uiPlugins?.pagesPath[ownerType][pagesPath.name]?.self);
+          // if (model?.uiPlugins?.pagesPath[owner][pagesPath.name]?.self) {
+          //   setCurrentModelSetting(model?.uiPlugins?.pagesPath[owner][pagesPath.name]?.self);
           // }
           setPageModelIndex(index);
         }}
@@ -327,7 +331,7 @@ export const PagesPath = ({
                             .find({ id: pageModel.id })
                             .get('uiPlugins')
                             .get('pagesPath')
-                            .get(ownerType)
+                            .get(owner)
                             .get(pagesPath.name)
                             .assign({
                               self: currentModelSetting,
@@ -498,36 +502,38 @@ export const PagesPath = ({
   );
 };
 
-const adapter = new LocalStorage('db');
 export default function Login() {
   const [db, setDb] = useState(null);
   const [currentSettings, setCurrentSettings] = useState(null);
 
   const {
-    query: { ownerType },
+    query: { owner },
   } = useRouter();
+
+  const { data, error, loading, refetch } = useQuery(GET_PARENT_OWNER, {
+    variables: {
+      owner,
+    },
+    skip: !owner,
+  });
 
   const [modelSelect, setModelSelect] = useState([]);
 
   const [currentModelSetting, setCurrentModelSetting] = useState({});
 
-  const [newPagesPath, setNewPagesPath] = useState({
-    options: [],
-    name: '',
-  });
-
   useEffect(() => {
-    if (!db) {
+    if (owner && !db) {
+      const adapter = new LocalStorage(owner);
       const db = low(adapter);
       setDb(db);
     }
-  }, []);
+  }, [owner]);
 
   useEffect(() => {
-    if (db && !currentSettings) {
+    if (db && !currentSettings && data?.parentOwner) {
       const models = db.get('models').value();
       if (!models) {
-        db.defaults(defaultSettings).write();
+        db.defaults(data.parentOwner).write();
       }
       const savedDb = db.value();
 
@@ -538,12 +544,12 @@ export default function Login() {
         }),
       );
     }
-  }, [db, currentSettings]);
+  }, [db, currentSettings, data]);
 
   const pagesPaths: any[] = [];
   currentSettings?.models?.map((model, modelInex) => {
-    if (model?.uiPlugins?.pagesPath && model?.uiPlugins?.pagesPath[ownerType]) {
-      const modelPagesPaths = model.uiPlugins.pagesPath[ownerType];
+    if (model?.uiPlugins?.pagesPath && model?.uiPlugins?.pagesPath[owner]) {
+      const modelPagesPaths = model.uiPlugins.pagesPath[owner];
       for (const key in modelPagesPaths) {
         if (Object.prototype.hasOwnProperty.call(modelPagesPaths, key)) {
           const modelPagesPath = modelPagesPaths[key];
@@ -555,16 +561,6 @@ export default function Login() {
           }
         }
       }
-
-      // for (let index = 0; index < modelPagesPaths.length; index++) {
-      //   const modelPagesPath = modelPagesPaths[index];
-      //   const existPath = pagesPaths.find((pagesPath) => {
-      //     return pagesPath.name === modelPagesPaths.name;
-      //   });
-      //   if (!existPath) {
-      //     pagesPaths.push(modelPagesPath);
-      //   }
-      // }
     }
   });
 
@@ -574,72 +570,18 @@ export default function Login() {
         <Tabs>
           <Tab title="Model Permission">
             <Card>
-              <Settings />
+              <Settings role={`prisma/framework/owners/${owner}.json`} />
             </Card>
           </Tab>
           <Tab title="Add New Page Path">
-            <Card style={{ height: '500px' }}>
-              <CardBody>
-                <p>Please enter the new name</p>
-
-                <Input>
-                  <input
-                    onChange={(e) => {
-                      setNewPagesPath({
-                        ...newPagesPath,
-                        name: e.target.value,
-                      });
-                    }}
-                    type="text"
-                    placeholder="name"
-                  />
-                </Input>
-                <p>Please select at least one model for this page</p>
-
-                <Select
-                  onChange={(options) => {
-                    setNewPagesPath({
-                      ...newPagesPath,
-                      options,
-                    });
-                  }}
-                  isMulti
-                  options={modelSelect}
-                  placeholder="Model"
-                />
-                <br />
-                <Button
-                  onClick={() => {
-                    newPagesPath.options.map((option) => {
-                      db.get('models')
-                        .find({ id: option.value })
-                        .assign({
-                          uiPlugins: {
-                            pagesPath: {
-                              [ownerType]: {
-                                [newPagesPath.name]: {
-                                  name: newPagesPath.name,
-                                },
-                              },
-                            },
-                          },
-                        })
-                        .write();
-                    });
-                    setCurrentSettings(null);
-                  }}
-                >
-                  Confirm
-                </Button>
-              </CardBody>
-            </Card>
+            <AddNewPagesPath db={db} setCurrentSettings={setCurrentSettings} />
           </Tab>
           {pagesPaths?.map((pagesPath, pagesPathIndex) => {
             const pageModels = currentSettings.models.filter(
               (model) =>
                 !!model?.uiPlugins?.pagesPath &&
-                !!model?.uiPlugins?.pagesPath[ownerType] &&
-                !!model?.uiPlugins?.pagesPath[ownerType][pagesPath.name],
+                !!model?.uiPlugins?.pagesPath[owner] &&
+                !!model?.uiPlugins?.pagesPath[owner][pagesPath.name],
             );
             return (
               <Tab key={pagesPathIndex} title={pagesPath.name}>
@@ -649,7 +591,7 @@ export default function Login() {
                   pageModels={pageModels}
                   setCurrentModelSetting={setCurrentModelSetting}
                   currentModelSetting={currentModelSetting}
-                  ownerType={ownerType}
+                  owner={owner}
                   pagesPath={pagesPath}
                 />
               </Tab>
@@ -659,6 +601,115 @@ export default function Login() {
       </>
     );
   } else {
-    return null;
+    return (
+      <AddDefaultOwnerModels
+        owner={owner}
+        refetch={refetch}
+        setCurrentSettings={setCurrentSettings}
+      />
+    );
   }
 }
+
+const AddNewPagesPath = ({ setCurrentSettings, db }) => {
+  const [newPagesPath, setNewPagesPath] = useState({
+    options: [],
+    name: '',
+  });
+  return (
+    <Card style={{ height: '500px' }}>
+      <CardBody>
+        <p>Please enter the new name</p>
+
+        <Input>
+          <input
+            onChange={(e) => {
+              setNewPagesPath({
+                ...newPagesPath,
+                name: e.target.value,
+              });
+            }}
+            type="text"
+            placeholder="name"
+          />
+        </Input>
+        <p>Please select at least one model for this page</p>
+
+        <Select
+          onChange={(options) => {
+            setNewPagesPath({
+              ...newPagesPath,
+              options,
+            });
+          }}
+          isMulti
+          options={modelSelect}
+          placeholder="Model"
+        />
+        <br />
+        <Button
+          onClick={() => {
+            newPagesPath.options.map((option) => {
+              db.get('models')
+                .find({ id: option.value })
+                .assign({
+                  uiPlugins: {
+                    pagesPath: {
+                      [owner]: {
+                        [newPagesPath.name]: {
+                          name: newPagesPath.name,
+                        },
+                      },
+                    },
+                  },
+                })
+                .write();
+            });
+            setCurrentSettings(null);
+          }}
+        >
+          Confirm
+        </Button>
+      </CardBody>
+    </Card>
+  );
+};
+
+const AddDefaultOwnerModels = ({ setCurrentSettings, owner, refetch }) => {
+  const [defaultOwnerModels, setDefaultOwnerModels] = useState([]);
+  const [createParentOwner] = useMutation(CREATE_PARENT_OWNER);
+  return (
+    <CardBody>
+      <p>Please select models that has this owner as their Parent model</p>
+
+      <Select
+        onChange={(options) => {
+          setDefaultOwnerModels(options);
+        }}
+        isMulti
+        options={adminSettings.models.map((model) => {
+          return {
+            label: model.name,
+            value: model.id,
+          };
+        })}
+        placeholder="Model"
+      />
+      <br />
+      <Button
+        onClick={async () => {
+          const newParentOwner = await createParentOwner({
+            variables: {
+              owner,
+              models: defaultOwnerModels.map((ownerModel) => ownerModel.value),
+            },
+          });
+          setCurrentSettings(null);
+          refetch();
+        }}
+      >
+        Confirm
+      </Button>
+    </CardBody>
+  );
+};

@@ -13,6 +13,8 @@ import Select from '@paljs/ui/Select';
 import Row from '@paljs/ui/Row';
 import Col from '@paljs/ui/Col';
 import Link from 'next/link';
+import { useQuery } from '@apollo/client';
+import { GET_PARENT_ROOT } from 'Components/PrismaAdmin/SchemaQueries';
 const Input = styled(InputGroup)`
   margin-bottom: 10px;
 `;
@@ -21,6 +23,8 @@ export default function Login() {
   const ownerType = defaultSettings.enums.find(
     (enumModel) => enumModel.name === 'OwnerType',
   );
+
+  const { data, error, loading } = useQuery(GET_PARENT_ROOT);
 
   return (
     <>

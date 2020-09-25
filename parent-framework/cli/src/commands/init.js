@@ -18,65 +18,65 @@ const cloneSource = () =>
     resolve();
   });
 
-const updatePrismaSchema = () =>
-  new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const prismaSchemaLocation = path.join(
-        __dirname,
-        '../../../example/prisma/schema.prisma',
-      );
-      const prismaSchema = fs.readFileSync(prismaSchemaLocation);
-      let prismaSchemaString = prismaSchema.toString();
-      prismaSchemaString = prismaSchemaString.replace(
-        'model User {',
-        'model User {\ncompanies Company[]\nmembers   Member[]',
-      );
-      prismaSchemaString = prismaSchemaString.replace(
-        'provider = "sqlite"',
-        'provider = "postgresql"',
-      );
-      prismaSchemaString =
-        prismaSchemaString +
-        `model Company {
-          id        Int      @default(autoincrement()) @id
-          title     String
-          createdAt DateTime @default(now())
-          updatedAt DateTime @updatedAt
-          owner     User     @relation(fields: [ownerId], references: [id])
-          ownerId   Int
-          members   Member[]
-        }
-        
-        model Member {
-          id        Int      @default(autoincrement()) @id
-          user      User     @relation(fields: [userId], references: [id])
-          userId    Int
-          createdAt DateTime @default(now())
-          updatedAt DateTime @updatedAt
-          role      Role     @relation(fields: [roleId], references: [id])
-          roleId    Int
-          company   Company  @relation(fields: [companyId], references: [id])
-          companyId Int
-        }
-        
-        model Role {
-          id      Int      @default(autoincrement()) @id
-          members Member[]
-          schema  Json
-          title   String   @unique
-        }
-        
-        enum OwnerType {
-          User
-          Company
-        }
-      `;
+// const updatePrismaSchema = () =>
+//   new Promise((resolve, reject) => {
+//     setTimeout(() => {
+//       const prismaSchemaLocation = path.join(
+//         __dirname,
+//         '../../../example/prisma/schema.prisma',
+//       );
+//       const prismaSchema = fs.readFileSync(prismaSchemaLocation);
+//       let prismaSchemaString = prismaSchema.toString();
+//       prismaSchemaString = prismaSchemaString.replace(
+//         'model User {',
+//         'model User {\ncompanies Company[]\nmembers   Member[]',
+//       );
+//       prismaSchemaString = prismaSchemaString.replace(
+//         'provider = "sqlite"',
+//         'provider = "postgresql"',
+//       );
+//       prismaSchemaString =
+//         prismaSchemaString +
+//         `model Company {
+//           id        Int      @default(autoincrement()) @id
+//           title     String
+//           createdAt DateTime @default(now())
+//           updatedAt DateTime @updatedAt
+//           owner     User     @relation(fields: [ownerId], references: [id])
+//           ownerId   Int
+//           members   Member[]
+//         }
 
-      fs.writeFileSync(prismaSchemaLocation, prismaSchemaString);
-      console.log(chalk.green('Successfully replaced original schema'));
-      resolve();
-    }, 500);
-  });
+//         model Member {
+//           id        Int      @default(autoincrement()) @id
+//           user      User     @relation(fields: [userId], references: [id])
+//           userId    Int
+//           createdAt DateTime @default(now())
+//           updatedAt DateTime @updatedAt
+//           role      Role     @relation(fields: [roleId], references: [id])
+//           roleId    Int
+//           company   Company  @relation(fields: [companyId], references: [id])
+//           companyId Int
+//         }
+
+//         model Role {
+//           id      Int      @default(autoincrement()) @id
+//           members Member[]
+//           schema  Json
+//           title   String   @unique
+//         }
+
+//         enum OwnerType {
+//           User
+//           Company
+//         }
+//       `;
+
+//       fs.writeFileSync(prismaSchemaLocation, prismaSchemaString);
+//       console.log(chalk.green('Successfully replaced original schema'));
+//       resolve();
+//     }, 500);
+//   });
 
 const updateLayout = () =>
   new Promise((resolve, reject) => {
@@ -135,6 +135,7 @@ const updatePackageJson = () =>
         ...packageJson.dependencies,
         '@paljs/cli': '^1.5.1',
         'jwt-decode': '^3.0.0-beta.2',
+        'graphql-type-json': '^0.3.2',
         lowdb: '^1.0.0',
       };
       fs.writeFileSync(
@@ -278,17 +279,10 @@ const updateSettings = () =>
 
       const oldString = 'export const Settings: React.FC = () => {';
       if (settingsString.includes(oldString)) {
-        const newString =
-          `import { useRole } from 'utils/middleware';\n` +
-          oldString +
-          `const role = useRole();
-            const { data } = useQuery<{ getSchema: ContextProps['schema'] }>(GET_SCHEMA, {
-              variables: {
-                title: role,
-              },
-              skip: !role,
-            });`;
-        settingsString = settingsString.replace(oldString, newString);
+        settingsString = settingsString.replace(
+          oldString,
+          'export const Settings: React.FC = ({title}) => {',
+        );
         console.log(
           chalk.green(
             'Successfully updated Components/PrismaAdmin/Settings/index.tsx',
@@ -302,6 +296,24 @@ const updateSettings = () =>
         );
       }
 
+      const oldQueryString = `useQuery<{ getSchema: ContextProps['schema'] }>(GET_SCHEMA)`;
+      if (settingsString.includes(oldQueryString)) {
+        settingsString = settingsString.replace(
+          oldQueryString,
+          `useQuery<{ getSchema: ContextProps['schema'] }>(GET_SCHEMA,{variables:{title},skip:!title})`,
+        );
+        console.log(
+          chalk.green(
+            'Successfully updated Components/PrismaAdmin/Settings/index.tsx',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to updated Components/PrismaAdmin/Settings/index.tsx',
+          ),
+        );
+      }
       settingsString = format(settingsString, {
         singleQuote: true,
         semi: false,
@@ -319,7 +331,7 @@ const addCustomElements = () => {
     setTimeout(async () => {
       const headerElementSource = path.join(
         __dirname,
-        '../templates/src/components/Header',
+        '../templates/src/Components/Header',
       );
       const headerElementDestination = path.join(
         __dirname,
@@ -349,15 +361,58 @@ const addCustomElements = () => {
       await ncp(dockerSource, dockerDestination);
       console.log(chalk.green('Successfully cloned docker-compose to root'));
 
-      const prismaEnvSource = path.join(__dirname, '../templates/prisma/.env');
-      const prismaEnvDestination = path.join(
+      // const prismaEnvSource = path.join(__dirname, '../templates/prisma/.env');
+      // const prismaEnvDestination = path.join(
+      //   __dirname,
+      //   '../../../example/prisma/.env',
+      // );
+      // await ncp(prismaEnvSource, prismaEnvDestination);
+      // console.log(
+      //   chalk.green('Successfully replaced prisma env to prisma/.env'),
+      // );
+
+      const prismaSource = path.join(__dirname, '../templates/prisma');
+      const prismaDestination = path.join(__dirname, '../../../example/prisma');
+      await ncp(prismaSource, prismaDestination);
+      console.log(chalk.green('Successfully updated prisma schema'));
+
+      const apiSource = path.join(__dirname, '../templates/src/Api/');
+      const apiDestination = path.join(__dirname, '../../../example/src/Api');
+      await ncp(apiSource, apiDestination);
+      console.log(chalk.green('Successfully updated api'));
+
+      const parentBuilderSource = path.join(
         __dirname,
-        '../../../example/prisma/.env',
+        '../templates/src/pages/admin/auth/parent-builder',
       );
-      await ncp(prismaEnvSource, prismaEnvDestination);
-      console.log(
-        chalk.green('Successfully replaced prisma env to prisma/.env'),
+      const parentBuilderDestination = path.join(
+        __dirname,
+        '../../../example/src/pages/admin/auth/parent-builder',
       );
+      await ncp(parentBuilderSource, parentBuilderDestination);
+      console.log(chalk.green('Successfully added parentbuilder'));
+
+      const settingsSource = path.join(
+        __dirname,
+        '../templates/src/Components/PrismaAdmin/Settings',
+      );
+      const settingsDestination = path.join(
+        __dirname,
+        '../../../example/src/Components/PrismaAdmin/Settings',
+      );
+      await ncp(settingsSource, settingsDestination);
+      console.log(chalk.green('Successfully updated Settings'));
+
+      const schemaQueriesSource = path.join(
+        __dirname,
+        '../templates/src/Components/PrismaAdmin/SchemaQueries.ts',
+      );
+      const schemaQueriesDestination = path.join(
+        __dirname,
+        '../../../example/src/Components/PrismaAdmin/SchemaQueries.ts',
+      );
+      await ncp(schemaQueriesSource, schemaQueriesDestination);
+      console.log(chalk.green('Successfully updated Schemaqueries'));
 
       resolve();
     }, 500);
@@ -862,7 +917,7 @@ const updatePrismaAdminDynamicTable = () =>
 class Init extends Command {
   async run() {
     await cloneSource();
-    await updatePrismaSchema();
+    // await updatePrismaSchema();
     await updatePackageJson();
     await clonePrismaAdmin();
     await updatePrismaAdminDynamicTable();
@@ -870,7 +925,7 @@ class Init extends Command {
     await updatePrismaAdminTable();
     await updatePrismaAdminEditRecord();
     await addCustomElements();
-    await updateSettings();
+    // await updateSettings();
     await updateSchemaQueries();
   }
 }
