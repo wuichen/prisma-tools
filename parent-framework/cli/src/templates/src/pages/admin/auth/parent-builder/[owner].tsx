@@ -574,7 +574,12 @@ export default function Login() {
             </Card>
           </Tab>
           <Tab title="Add New Page Path">
-            <AddNewPagesPath db={db} setCurrentSettings={setCurrentSettings} />
+            <AddNewPagesPath
+              owner={owner}
+              modelSelect={modelSelect}
+              db={db}
+              setCurrentSettings={setCurrentSettings}
+            />
           </Tab>
           {pagesPaths?.map((pagesPath, pagesPathIndex) => {
             const pageModels = currentSettings.models.filter(
@@ -611,7 +616,7 @@ export default function Login() {
   }
 }
 
-const AddNewPagesPath = ({ setCurrentSettings, db }) => {
+const AddNewPagesPath = ({ setCurrentSettings, owner, db, modelSelect }) => {
   const [newPagesPath, setNewPagesPath] = useState({
     options: [],
     name: '',
