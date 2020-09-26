@@ -39,99 +39,280 @@ export const DynamicTableEdit = ({
   });
   tabs.push({ title: 'id', code: 'id' });
 
-  const fieldBreakPointsMdValue =
-    currentModelSetting?.grid?.fieldBreakPoints?.md || 4;
+  const fieldBreakPointsMdValue = modelField.id.includes('.')
+    ? (currentModelSetting?.dynamicTables &&
+        currentModelSetting?.dynamicTables[modelField.type] &&
+        currentModelSetting?.dynamicTables[modelField.type]?.grid
+          ?.fieldBreakPoints?.md) ||
+      4
+    : currentModelSetting?.grid?.fieldBreakPoints?.md || 4;
 
   const fieldBreakPointsMdOnChange = (e) => {
-    setCurrentModelSetting({
-      ...currentModelSetting,
-      grid: {
-        ...currentModelSetting?.grid,
-        fieldBreakPoints: {
-          ...currentModelSetting?.grid?.fieldBreakPoints,
-          md: e.target.value,
-        },
-      },
-    });
+    const fieldBreakPointMdValue = modelField.id.includes('.')
+      ? {
+          ...currentModelSetting,
+          dynamicTables: {
+            ...currentModelSetting?.dynamicTables,
+            [modelField.type]: {
+              ...(currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type]),
+              grid: {
+                ...(currentModelSetting?.dynamicTables &&
+                  currentModelSetting?.dynamicTables[modelField.type] &&
+                  currentModelSetting?.dynamicTables[modelField.type]?.grid),
+                fieldBreakPoints: {
+                  ...(currentModelSetting?.dynamicTables &&
+                    currentModelSetting?.dynamicTables[modelField.type] &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid
+                      ?.fieldBreakPoints),
+                  md: e.target.value,
+                },
+              },
+            },
+          },
+        }
+      : {
+          ...currentModelSetting,
+          grid: {
+            ...currentModelSetting?.grid,
+            fieldBreakPoints: {
+              ...currentModelSetting?.grid?.fieldBreakPoints,
+              md: e.target.value,
+            },
+          },
+        };
+    setCurrentModelSetting(fieldBreakPointMdValue);
   };
-  const fieldBreakPointsXsValue =
-    currentModelSetting?.grid?.fieldBreakPoints?.xs || 4;
+
+  const fieldBreakPointsXsValue = modelField.id.includes('.')
+    ? (currentModelSetting?.dynamicTables &&
+        currentModelSetting?.dynamicTables[modelField.type] &&
+        currentModelSetting?.dynamicTables[modelField.type]?.grid
+          ?.fieldBreakPoints?.xs) ||
+      4
+    : currentModelSetting?.grid?.fieldBreakPoints?.xs || 4;
 
   const fieldBreakPointsXsOnChange = (e) => {
-    setCurrentModelSetting({
-      ...currentModelSetting,
-      grid: {
-        ...currentModelSetting?.grid,
-        fieldBreakPoints: {
-          ...currentModelSetting?.grid?.fieldBreakPoints,
-          xs: e.target.value,
-        },
-      },
-    });
+    const fieldBreakPointXsValue = modelField.id.includes('.')
+      ? {
+          ...currentModelSetting,
+          dynamicTables: {
+            ...currentModelSetting?.dynamicTables,
+            [modelField.type]: {
+              ...(currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type]),
+              grid: {
+                ...(currentModelSetting?.dynamicTables &&
+                  currentModelSetting?.dynamicTables[modelField.type] &&
+                  currentModelSetting?.dynamicTables[modelField.type]?.grid),
+                fieldBreakPoints: {
+                  ...(currentModelSetting?.dynamicTables &&
+                    currentModelSetting?.dynamicTables[modelField.type] &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid
+                      ?.fieldBreakPoints),
+                  xs: e.target.value,
+                },
+              },
+            },
+          },
+        }
+      : {
+          ...currentModelSetting,
+          grid: {
+            ...currentModelSetting?.grid,
+            fieldBreakPoints: {
+              ...currentModelSetting?.grid?.fieldBreakPoints,
+              xs: e.target.value,
+            },
+          },
+        };
+    setCurrentModelSetting(fieldBreakPointXsValue);
   };
 
-  const cardBreakPointsMdValue =
-    currentModelSetting?.grid?.cardBreakPoints?.md || 4;
+  const cardBreakPointsMdValue = modelField.id.includes('.')
+    ? (currentModelSetting?.dynamicTables &&
+        currentModelSetting?.dynamicTables[modelField.type] &&
+        currentModelSetting?.dynamicTables[modelField.type]?.grid
+          ?.cardBreakPoints?.md) ||
+      4
+    : currentModelSetting?.grid?.cardBreakPoints?.md || 4;
 
   const cardBreakPointsMdOnChange = (e) => {
-    setCurrentModelSetting({
-      ...currentModelSetting,
-      grid: {
-        ...currentModelSetting?.grid,
-        cardBreakPoints: {
-          ...currentModelSetting?.grid?.cardBreakPoints,
-          md: e.target.value,
-        },
-      },
-    });
+    const cardBreakPointMdValue = modelField.id.includes('.')
+      ? {
+          ...currentModelSetting,
+          dynamicTables: {
+            ...currentModelSetting?.dynamicTables,
+            [modelField.type]: {
+              ...(currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type]),
+              grid: {
+                ...(currentModelSetting?.dynamicTables &&
+                  currentModelSetting?.dynamicTables[modelField.type] &&
+                  currentModelSetting?.dynamicTables[modelField.type]?.grid),
+                cardBreakPoints: {
+                  ...(currentModelSetting?.dynamicTables &&
+                    currentModelSetting?.dynamicTables[modelField.type] &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid
+                      ?.cardBreakPoints),
+                  md: e.target.value,
+                },
+              },
+            },
+          },
+        }
+      : {
+          ...currentModelSetting,
+          grid: {
+            ...currentModelSetting?.grid,
+            cardBreakPoints: {
+              ...currentModelSetting?.grid?.cardBreakPoints,
+              md: e.target.value,
+            },
+          },
+        };
+    setCurrentModelSetting(cardBreakPointMdValue);
   };
 
-  const cardBreakPointsXsValue =
-    currentModelSetting?.grid?.cardBreakPoints?.xs || 4;
+  const cardBreakPointsXsValue = modelField.id.includes('.')
+    ? (currentModelSetting?.dynamicTables &&
+        currentModelSetting?.dynamicTables[modelField.type] &&
+        currentModelSetting?.dynamicTables[modelField.type]?.grid
+          ?.cardBreakPoints?.xs) ||
+      4
+    : currentModelSetting?.grid?.cardBreakPoints?.xs || 4;
 
   const cardBreakPointsXsOnChange = (e) => {
-    setCurrentModelSetting({
-      ...currentModelSetting,
-      grid: {
-        ...currentModelSetting?.grid,
-        cardBreakPoints: {
-          ...currentModelSetting?.grid?.cardBreakPoints,
-          xs: e.target.value,
-        },
-      },
-    });
+    const cardBreakPointXsValue = modelField.id.includes('.')
+      ? {
+          ...currentModelSetting,
+          dynamicTables: {
+            ...currentModelSetting?.dynamicTables,
+            [modelField.type]: {
+              ...(currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type]),
+              grid: {
+                ...(currentModelSetting?.dynamicTables &&
+                  currentModelSetting?.dynamicTables[modelField.type] &&
+                  currentModelSetting?.dynamicTables[modelField.type]?.grid),
+                cardBreakPoints: {
+                  ...(currentModelSetting?.dynamicTables &&
+                    currentModelSetting?.dynamicTables[modelField.type] &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid
+                      ?.cardBreakPoints),
+                  xs: e.target.value,
+                },
+              },
+            },
+          },
+        }
+      : {
+          ...currentModelSetting,
+          grid: {
+            ...currentModelSetting?.grid,
+            cardBreakPoints: {
+              ...currentModelSetting?.grid?.cardBreakPoints,
+              xs: e.target.value,
+            },
+          },
+        };
+    setCurrentModelSetting(cardBreakPointXsValue);
   };
 
-  const buttonBreakPointsXsValue =
-    currentModelSetting?.grid?.buttonBreakPoints?.xs || 4;
-
-  const buttonBreakPointsXsOnChange = (e) => {
-    setCurrentModelSetting({
-      ...currentModelSetting,
-      grid: {
-        ...currentModelSetting?.grid,
-        buttonBreakPoints: {
-          ...currentModelSetting?.grid?.buttonBreakPoints,
-          xs: e.target.value,
-        },
-      },
-    });
-  };
-
-  const buttonBreakPointsMdValue =
-    currentModelSetting?.grid?.buttonBreakPoints?.md || 4;
+  const buttonBreakPointsMdValue = modelField.id.includes('.')
+    ? (currentModelSetting?.dynamicTables &&
+        currentModelSetting?.dynamicTables[modelField.type] &&
+        currentModelSetting?.dynamicTables[modelField.type]?.grid
+          ?.buttonBreakPoints?.md) ||
+      4
+    : currentModelSetting?.grid?.buttonBreakPoints?.md || 4;
 
   const buttonBreakPointsMdOnChange = (e) => {
-    setCurrentModelSetting({
-      ...currentModelSetting,
-      grid: {
-        ...currentModelSetting?.grid,
-        buttonBreakPoints: {
-          ...currentModelSetting?.grid?.buttonBreakPoints,
-          md: e.target.value,
-        },
-      },
-    });
+    const buttonBreakPointMdValue = modelField.id.includes('.')
+      ? {
+          ...currentModelSetting,
+          dynamicTables: {
+            ...currentModelSetting?.dynamicTables,
+            [modelField.type]: {
+              ...(currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type]),
+              grid: {
+                ...(currentModelSetting?.dynamicTables &&
+                  currentModelSetting?.dynamicTables[modelField.type] &&
+                  currentModelSetting?.dynamicTables[modelField.type]?.grid),
+                buttonBreakPoints: {
+                  ...(currentModelSetting?.dynamicTables &&
+                    currentModelSetting?.dynamicTables[modelField.type] &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid
+                      ?.buttonBreakPoints),
+                  md: e.target.value,
+                },
+              },
+            },
+          },
+        }
+      : {
+          ...currentModelSetting,
+          grid: {
+            ...currentModelSetting?.grid,
+            buttonBreakPoints: {
+              ...currentModelSetting?.grid?.buttonBreakPoints,
+              md: e.target.value,
+            },
+          },
+        };
+    setCurrentModelSetting(buttonBreakPointMdValue);
+  };
+
+  const buttonBreakPointsXsValue = modelField.id.includes('.')
+    ? (currentModelSetting?.dynamicTables &&
+        currentModelSetting?.dynamicTables[modelField.type] &&
+        currentModelSetting?.dynamicTables[modelField.type]?.grid
+          ?.buttonBreakPoints?.xs) ||
+      4
+    : currentModelSetting?.grid?.buttonBreakPoints?.xs || 4;
+
+  const buttonBreakPointsXsOnChange = (e) => {
+    const buttonBreakPointXsValue = modelField.id.includes('.')
+      ? {
+          ...currentModelSetting,
+          dynamicTables: {
+            ...currentModelSetting?.dynamicTables,
+            [modelField.type]: {
+              ...(currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type]),
+              grid: {
+                ...(currentModelSetting?.dynamicTables &&
+                  currentModelSetting?.dynamicTables[modelField.type] &&
+                  currentModelSetting?.dynamicTables[modelField.type]?.grid),
+                buttonBreakPoints: {
+                  ...(currentModelSetting?.dynamicTables &&
+                    currentModelSetting?.dynamicTables[modelField.type] &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid &&
+                    currentModelSetting?.dynamicTables[modelField.type]?.grid
+                      ?.buttonBreakPoints),
+                  xs: e.target.value,
+                },
+              },
+            },
+          },
+        }
+      : {
+          ...currentModelSetting,
+          grid: {
+            ...currentModelSetting?.grid,
+            buttonBreakPoints: {
+              ...currentModelSetting?.grid?.buttonBreakPoints,
+              xs: e.target.value,
+            },
+          },
+        };
+    setCurrentModelSetting(buttonBreakPointXsValue);
   };
 
   // const onSaveClick,
@@ -157,15 +338,25 @@ export const DynamicTableEdit = ({
             const createTitleSettingValue = modelField.id.includes('.')
               ? {
                   ...currentModelSetting,
-
                   dynamicTables: {
                     ...currentModelSetting.dynamicTables,
                     [modelField.type]: {
+                      ...(currentModelSetting?.dynamicTables &&
+                        currentModelSetting.dynamicTables[modelField.type]),
                       header: {
-                        ...currentModelSetting?.header,
+                        ...(currentModelSetting?.dynamicTables?.[
+                          modelField.type
+                        ] &&
+                          currentModelSetting?.dynamicTables[modelField.type]
+                            .header),
                         [tab.code]: {
-                          ...(currentModelSetting.header &&
-                            currentModelSetting?.header[tab.code]),
+                          ...(currentModelSetting?.dynamicTables?.[
+                            modelField.type
+                          ] &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header[tab.code]),
                           createTitle: e.target.value,
                         },
                       },
@@ -202,15 +393,25 @@ export const DynamicTableEdit = ({
             const createDescriptionSettingValue = modelField.id.includes('.')
               ? {
                   ...currentModelSetting,
-
                   dynamicTables: {
                     ...currentModelSetting.dynamicTables,
                     [modelField.type]: {
+                      ...(currentModelSetting?.dynamicTables &&
+                        currentModelSetting.dynamicTables[modelField.type]),
                       header: {
-                        ...currentModelSetting?.header,
+                        ...(currentModelSetting?.dynamicTables?.[
+                          modelField.type
+                        ] &&
+                          currentModelSetting?.dynamicTables[modelField.type]
+                            .header),
                         [tab.code]: {
-                          ...(currentModelSetting.header &&
-                            currentModelSetting?.header[tab.code]),
+                          ...(currentModelSetting?.dynamicTables?.[
+                            modelField.type
+                          ] &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header[tab.code]),
                           createDescription: e.target.value,
                         },
                       },
@@ -246,15 +447,25 @@ export const DynamicTableEdit = ({
             const updateTitleSettingValue = modelField.id.includes('.')
               ? {
                   ...currentModelSetting,
-
                   dynamicTables: {
                     ...currentModelSetting.dynamicTables,
                     [modelField.type]: {
+                      ...(currentModelSetting?.dynamicTables &&
+                        currentModelSetting.dynamicTables[modelField.type]),
                       header: {
-                        ...currentModelSetting?.header,
+                        ...(currentModelSetting?.dynamicTables?.[
+                          modelField.type
+                        ] &&
+                          currentModelSetting?.dynamicTables[modelField.type]
+                            .header),
                         [tab.code]: {
-                          ...(currentModelSetting.header &&
-                            currentModelSetting?.header[tab.code]),
+                          ...(currentModelSetting?.dynamicTables?.[
+                            modelField.type
+                          ] &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header[tab.code]),
                           updateTitle: e.target.value,
                         },
                       },
@@ -291,15 +502,25 @@ export const DynamicTableEdit = ({
             const updateDescriptionSettingValue = modelField.id.includes('.')
               ? {
                   ...currentModelSetting,
-
                   dynamicTables: {
                     ...currentModelSetting.dynamicTables,
                     [modelField.type]: {
+                      ...(currentModelSetting?.dynamicTables &&
+                        currentModelSetting.dynamicTables[modelField.type]),
                       header: {
-                        ...currentModelSetting?.header,
+                        ...(currentModelSetting?.dynamicTables?.[
+                          modelField.type
+                        ] &&
+                          currentModelSetting?.dynamicTables[modelField.type]
+                            .header),
                         [tab.code]: {
-                          ...(currentModelSetting.header &&
-                            currentModelSetting?.header[tab.code]),
+                          ...(currentModelSetting?.dynamicTables?.[
+                            modelField.type
+                          ] &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header[tab.code]),
                           updateDescription: e.target.value,
                         },
                       },
@@ -336,15 +557,25 @@ export const DynamicTableEdit = ({
             const listTitleSettingValue = modelField.id.includes('.')
               ? {
                   ...currentModelSetting,
-
                   dynamicTables: {
                     ...currentModelSetting.dynamicTables,
                     [modelField.type]: {
+                      ...(currentModelSetting?.dynamicTables &&
+                        currentModelSetting.dynamicTables[modelField.type]),
                       header: {
-                        ...currentModelSetting?.header,
+                        ...(currentModelSetting?.dynamicTables?.[
+                          modelField.type
+                        ] &&
+                          currentModelSetting?.dynamicTables[modelField.type]
+                            .header),
                         [tab.code]: {
-                          ...(currentModelSetting.header &&
-                            currentModelSetting?.header[tab.code]),
+                          ...(currentModelSetting?.dynamicTables?.[
+                            modelField.type
+                          ] &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header[tab.code]),
                           listTitle: e.target.value,
                         },
                       },
@@ -362,6 +593,7 @@ export const DynamicTableEdit = ({
                     },
                   },
                 };
+
             setCurrentModelSetting(listTitleSettingValue);
           };
 
@@ -381,15 +613,25 @@ export const DynamicTableEdit = ({
             const listDescriptionSettingValue = modelField.id.includes('.')
               ? {
                   ...currentModelSetting,
-
                   dynamicTables: {
                     ...currentModelSetting.dynamicTables,
                     [modelField.type]: {
+                      ...(currentModelSetting?.dynamicTables &&
+                        currentModelSetting.dynamicTables[modelField.type]),
                       header: {
-                        ...currentModelSetting?.header,
+                        ...(currentModelSetting?.dynamicTables?.[
+                          modelField.type
+                        ] &&
+                          currentModelSetting?.dynamicTables[modelField.type]
+                            .header),
                         [tab.code]: {
-                          ...(currentModelSetting.header &&
-                            currentModelSetting?.header[tab.code]),
+                          ...(currentModelSetting?.dynamicTables?.[
+                            modelField.type
+                          ] &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header &&
+                            currentModelSetting?.dynamicTables[modelField.type]
+                              ?.header[tab.code]),
                           listDescription: e.target.value,
                         },
                       },
@@ -539,8 +781,8 @@ export const DynamicTableEdit = ({
           db.get('models')
             .find({
               id: modelField.id.includes('.')
-                ? modelField.id
-                : modelField.id.split('.')[0],
+                ? modelField.id.split('.')[0]
+                : modelField.id,
             })
             .get('plugins')
             .get('pagesPath')
@@ -563,7 +805,6 @@ export const PagesPath = ({
   currentModelSetting,
   owner,
   pagesPath,
-  modelSelect,
   db,
 }) => {
   const [newModelTable, setNewModelTable] = useState(null);
@@ -583,6 +824,7 @@ export const PagesPath = ({
       pageModels[pageModelIndex]?.plugins?.pagesPath[owner][pagesPath.name],
     );
   }, [pageModelIndex]);
+
   return (
     <Card>
       <Tabs
@@ -595,6 +837,17 @@ export const PagesPath = ({
         }}
       >
         {pageModels.map((pageModel, index) => {
+          const modelSelect = pageModel.fields
+            .filter(
+              (field) =>
+                field.list && (field.create || field.read || field.update),
+            )
+            .map((field) => {
+              return {
+                label: field.name,
+                value: field.type,
+              };
+            });
           return (
             <Tab key={index} title={pageModel.id}>
               <Row>
@@ -658,15 +911,12 @@ export const PagesPath = ({
 
                   <Card>
                     <CardBody>
-                      <p>Create table</p>
                       <Select
                         onChange={(option) => {
                           const modelField = pageModel.fields.find(
-                            (field) =>
-                              field.type === option.value &&
-                              field.list &&
-                              (field.create || field.read || field.update),
+                            (field) => field.type === option.value,
                           );
+
                           setNewModelTable(modelField);
                         }}
                         options={modelSelect}
