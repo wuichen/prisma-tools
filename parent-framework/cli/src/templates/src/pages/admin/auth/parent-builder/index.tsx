@@ -8,52 +8,102 @@ import low from 'lowdb';
 import LocalStorage from 'lowdb/adapters/LocalStorage';
 import defaultSettings from '../../../../../prisma/adminSettings.json';
 import styled from 'styled-components';
-import { Settings } from '@paljs/admin';
+import { Settings } from 'Components/PrismaAdmin/Settings';
 import Select from '@paljs/ui/Select';
 import Row from '@paljs/ui/Row';
 import Col from '@paljs/ui/Col';
 import Link from 'next/link';
-import { useQuery } from '@apollo/client';
-import { GET_PARENT_ROOT } from 'Components/PrismaAdmin/SchemaQueries';
+import { useQuery, useMutation } from '@apollo/client';
+import {
+  GET_PARENT_ROOT,
+  GET_SCHEMA,
+  UPDATE_MODEL,
+  CREATE_PARENT_ROOT,
+} from 'Components/PrismaAdmin/SchemaQueries';
+import { Radio } from '@paljs/ui/Radio';
+
 const Input = styled(InputGroup)`
   margin-bottom: 10px;
 `;
 
-export default function Login() {
+export default function ParentBuilder() {
   const ownerType = defaultSettings.enums.find(
     (enumModel) => enumModel.name === 'OwnerType',
   );
-
+  const [createParentRoot] = useMutation(CREATE_PARENT_ROOT);
   const { data, error, loading } = useQuery(GET_PARENT_ROOT);
 
   return (
-    <>
-      <h4>Owner Types</h4>
-      <Row>
-        {ownerType?.fields?.map((field, index) => {
-          return (
-            <Col key={index} breakPoint={{ xs: 4 }}>
-              <Link href={`/admin/auth/parent-builder/${field}`}>
-                <Card>
-                  <CardBody>{field}</CardBody>
-                </Card>
-              </Link>
-            </Col>
-          );
-        })}
-      </Row>
-      <h4>Models</h4>
-      <Row>
-        {defaultSettings?.models?.map((model, index) => {
-          return (
-            <Col key={index} breakPoint={{ xs: 4 }}>
-              <Card>
-                <CardBody>{model.id}</CardBody>
-              </Card>
-            </Col>
-          );
-        })}
-      </Row>
-    </>
+    <div>
+      {data?.parentRoot ? (
+        <div>
+          <h4>Owner Types</h4>
+          <Row>
+            {ownerType?.fields?.map((field, index) => {
+              return (
+                <Col key={index} breakPoint={{ xs: 4 }}>
+                  <Link href={`/admin/auth/parent-builder/${field}`}>
+                    <Card>
+                      <CardBody>{field}</CardBody>
+                    </Card>
+                  </Link>
+                </Col>
+              );
+            })}
+          </Row>
+          <Settings
+            modelExtraSettings={ExtraRootModelSettings}
+            role={`prisma/framework/root.json`}
+          />
+        </div>
+      ) : (
+        <div>
+          <Button onClick={() => createParentRoot()}>Create Parent Root</Button>
+        </div>
+      )}
+    </div>
   );
 }
+
+const ExtraRootModelSettings = ({ modelObject: model, role }) => {
+  const [updateModel] = useMutation(UPDATE_MODEL);
+
+  return (
+    <div>
+      <Radio
+        name="radio"
+        onChange={(value) => {
+          updateModel({
+            variables: {
+              id: model.id,
+              data: {
+                plugins: {
+                  ...model.plugins,
+                  type: value,
+                },
+              },
+              role,
+            },
+          });
+        }}
+        options={[
+          {
+            value: 'public',
+            label: 'Public Model',
+            checked: model.plugins.type === 'public',
+          },
+          {
+            value: 'private',
+            label: 'Private Model',
+            checked: model.plugins.type === 'private',
+          },
+          {
+            value: 'system',
+            label: 'System Model',
+            checked: model.plugins.type === 'system',
+          },
+        ]}
+      />
+    </div>
+  );
+};

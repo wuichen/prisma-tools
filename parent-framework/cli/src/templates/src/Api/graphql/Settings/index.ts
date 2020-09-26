@@ -34,7 +34,7 @@ export const SchemaQueries = extendType({
         const rootJson = JSON.parse(rootFile)
 
         if (!ownerPathExists) {
-          throw new Error('Owner not exist')
+          return null
         }
         const ownerFile = fs.readFileSync(ownerPath)
         const ownerFileJson = JSON.parse(ownerFile)
@@ -68,6 +68,26 @@ export const SchemaQueries = extendType({
       type: GraphQLJSON,
       args: {},
       resolve: async (_, {}, {}) => {
+        const parentRootPath = 'prisma/framework/root.json'
+        if (!fs.existsSync) {
+          return null
+        }
+        const rootFile = fs.readFileSync(parentRootPath)
+        const rootJson = JSON.parse(rootFile)
+
+        return rootJson
+      },
+    })
+  },
+})
+
+export const SchemaMutations = extendType({
+  type: 'Mutation',
+  definition(t) {
+    t.field('createParentRoot', {
+      type: GraphQLJSON,
+      args: {},
+      resolve: async (_, { owner, models }, {}) => {
         const frameworkPath = 'prisma/framework'
         const frameworkPathExists = fs.existsSync(frameworkPath)
         const ownerType = adminSettings.enums.find((enumModel) => enumModel.name === 'OwnerType')
@@ -98,7 +118,7 @@ export const SchemaQueries = extendType({
               },
             }
             const displayFields = []
-            const serverPlugins = {
+            const plugins = {
               hooks,
               active: {},
               slug: '',
@@ -114,87 +134,37 @@ export const SchemaQueries = extendType({
               displayFields.push(nameField.name)
             }
             if (slugField && (titleField || nameField)) {
-              serverPlugins.slug = titleField?.name || nameField?.name
+              plugins.slug = titleField?.name || nameField?.name
             }
             if (activeField) {
-              serverPlugins.active = {}
+              plugins.active = {}
             }
+
+            const updatedFields = model.fields.map((field) => {
+              const create = field.name.includes('Id') ? false : field.create
+              const update = field.name.includes('Id') ? false : field.update
+              const read = field.name.includes('Id') ? false : field.read
+
+              return {
+                ...field,
+                create,
+                update,
+                read,
+              }
+            })
+
             return {
               ...model,
               displayFields,
-              serverPlugins,
+              plugins,
+              fields: updatedFields,
             }
-            // if (stripeFields.length > 0) {
-            //   stripeFields.map((stripeField) => {
-
-            //     // stripe fields are usually like stripe_product_id
-            //     const splitField = stripeFields.split('_')
-
-            //     switch (splitField[1]) {
-            //       case 'product':
-            //         hooks.after.create.push({
-            //           function: 'syncStripe',
-            //           parmas: {
-            //             model: 'product',
-            //             type: 'create',
-            //             data: {
-            //               name: 'data.title',
-            //               description: 'data.description',
-            //               active: 'data.active',
-            //               images: ['data.image'],
-            //               metadata: {
-            //                 productId: 'data.id',
-            //                 companyId: 'data.company.id'
-            //               }
-            //             }
-            //           }
-            //         })
-            //         hooks.after.update.push({
-            //           function: 'syncStripe',
-            //           parmas: {
-            //             model: 'product',
-            //             type: 'create',
-            //             data: {
-            //               name: 'data.title',
-            //               images: ['data.image'],
-            //               description: 'data.description',
-            //               active: 'data.active'
-            //             }
-            //           }
-            //         })
-            //         break;
-            //       case 'price':
-            //         hooks.after.create.push({
-            //           function: 'syncStripe',
-            //           parmas: {
-            //             model: 'price',
-            //             type: 'create',
-            //             data: {
-            //               nickname: 'data.title',
-            //               active: 'data.active',
-            //               unit_amount: 'data.company.country.multiplier * data.price'
-            //               currency: 'data.company.country.currency'
-            //             }
-            //           }
-            //         })
-            //         break;
-
-            //       default:
-            //         break;
-            //     }
-
-            //   })
-            // }
           })
 
           fs.writeFileSync(
             frameworkPath + '/root.json',
             JSON.stringify({ ...adminSettings, models: updatedModels }, null, 2),
           )
-          // fs.mkdirSync(frameworkPath + '/owners')
-          // ownerType.fields.map((field) => {
-          //   fs.writeFileSync(frameworkPath + `/owners/${field}.json`, JSON.stringify(adminSettings, null, 2))
-          // })
         }
 
         const rootFile = fs.readFileSync(frameworkPath + '/root.json')
@@ -203,12 +173,6 @@ export const SchemaQueries = extendType({
         return rootJson
       },
     })
-  },
-})
-
-export const SchemaMutations = extendType({
-  type: 'Mutation',
-  definition(t) {
     t.field('createParentOwner', {
       type: GraphQLJSON,
       args: {
@@ -298,6 +262,7 @@ export const ModelObject = objectType({
     })
     t.string('custom', { nullable: true })
     t.string('parent', { nullable: true })
+    t.json('plugins', { nullable: true })
   },
 })
 export const FieldObject = objectType({
@@ -324,6 +289,7 @@ export const FieldObject = objectType({
     t.boolean('relationField', { nullable: true })
     t.int('order')
     t.field('kind', { type: 'KindEnum' })
+    t.json('plugins', { nullable: true })
   },
 })
 export const KindEnum = enumType({
@@ -339,6 +305,7 @@ export const UpdateModelInput = inputObjectType({
     t.boolean('create')
     t.boolean('update')
     t.boolean('delete')
+    t.json('plugins', { nullable: true })
     t.list.field('fields', {
       type: 'UpdateFieldInput',
     })
@@ -362,6 +329,7 @@ export const UpdateFieldInput = inputObjectType({
     t.boolean('sort')
     t.boolean('editor')
     t.boolean('upload')
+    t.json('plugins', { nullable: true })
     t.boolean('relationField', { nullable: true })
     t.int('order')
     t.field('kind', { type: 'KindEnum' })

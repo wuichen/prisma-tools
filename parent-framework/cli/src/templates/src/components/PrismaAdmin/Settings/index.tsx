@@ -18,7 +18,7 @@ import { useMutation, useQuery } from '@apollo/client';
 import { GET_SCHEMA, UPDATE_MODEL } from '../SchemaQueries';
 import { ContextProps, SchemaModel } from '../types';
 
-export const Settings: React.FC = ({ role }) => {
+export const Settings: React.FC = ({ role, modelExtraSettings }) => {
   const { data } = useQuery<{ getSchema: ContextProps['schema'] }>(GET_SCHEMA, {
     variables: { role },
     skip: !role,
@@ -51,7 +51,7 @@ export const Settings: React.FC = ({ role }) => {
           data: {
             fields: newListOrder,
           },
-          title,
+          role,
         },
       });
       setCurrentModel({
@@ -60,6 +60,7 @@ export const Settings: React.FC = ({ role }) => {
       });
     }
   };
+  const ModelExtraSettings = modelExtraSettings;
 
   return (
     <Row>
@@ -95,6 +96,15 @@ export const Settings: React.FC = ({ role }) => {
                   />
                 )}
               </Col>
+              {ModelExtraSettings && currentModel && (
+                <Col breakPoint={{ xs: 12 }}>
+                  <ModelExtraSettings
+                    role={role}
+                    models={models}
+                    modelObject={currentModel}
+                  />
+                </Col>
+              )}
             </Row>
           </CardBody>
         </Card>

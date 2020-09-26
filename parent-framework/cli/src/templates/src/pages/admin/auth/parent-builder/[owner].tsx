@@ -18,9 +18,543 @@ import {
 } from 'Components/PrismaAdmin/SchemaQueries';
 import { useQuery, useMutation } from '@apollo/client';
 import adminSettings from '../../../../../prisma/adminSettings.json';
+import countries from 'settings/countries';
 const Input = styled(InputGroup)`
   margin-bottom: 10px;
 `;
+
+export const DynamicTableEdit = ({
+  modelField,
+  currentModelSetting,
+  setCurrentModelSetting,
+  owner,
+  pagesPath,
+  db,
+}) => {
+  let tabs = countries.map((country) => {
+    return {
+      title: country.country_long,
+      code: country.country_short,
+    };
+  });
+  tabs.push({ title: 'id', code: 'id' });
+
+  const fieldBreakPointsMdValue =
+    currentModelSetting?.grid?.fieldBreakPoints?.md || 4;
+
+  const fieldBreakPointsMdOnChange = (e) => {
+    setCurrentModelSetting({
+      ...currentModelSetting,
+      grid: {
+        ...currentModelSetting?.grid,
+        fieldBreakPoints: {
+          ...currentModelSetting?.grid?.fieldBreakPoints,
+          md: e.target.value,
+        },
+      },
+    });
+  };
+  const fieldBreakPointsXsValue =
+    currentModelSetting?.grid?.fieldBreakPoints?.xs || 4;
+
+  const fieldBreakPointsXsOnChange = (e) => {
+    setCurrentModelSetting({
+      ...currentModelSetting,
+      grid: {
+        ...currentModelSetting?.grid,
+        fieldBreakPoints: {
+          ...currentModelSetting?.grid?.fieldBreakPoints,
+          xs: e.target.value,
+        },
+      },
+    });
+  };
+
+  const cardBreakPointsMdValue =
+    currentModelSetting?.grid?.cardBreakPoints?.md || 4;
+
+  const cardBreakPointsMdOnChange = (e) => {
+    setCurrentModelSetting({
+      ...currentModelSetting,
+      grid: {
+        ...currentModelSetting?.grid,
+        cardBreakPoints: {
+          ...currentModelSetting?.grid?.cardBreakPoints,
+          md: e.target.value,
+        },
+      },
+    });
+  };
+
+  const cardBreakPointsXsValue =
+    currentModelSetting?.grid?.cardBreakPoints?.xs || 4;
+
+  const cardBreakPointsXsOnChange = (e) => {
+    setCurrentModelSetting({
+      ...currentModelSetting,
+      grid: {
+        ...currentModelSetting?.grid,
+        cardBreakPoints: {
+          ...currentModelSetting?.grid?.cardBreakPoints,
+          xs: e.target.value,
+        },
+      },
+    });
+  };
+
+  const buttonBreakPointsXsValue =
+    currentModelSetting?.grid?.buttonBreakPoints?.xs || 4;
+
+  const buttonBreakPointsXsOnChange = (e) => {
+    setCurrentModelSetting({
+      ...currentModelSetting,
+      grid: {
+        ...currentModelSetting?.grid,
+        buttonBreakPoints: {
+          ...currentModelSetting?.grid?.buttonBreakPoints,
+          xs: e.target.value,
+        },
+      },
+    });
+  };
+
+  const buttonBreakPointsMdValue =
+    currentModelSetting?.grid?.buttonBreakPoints?.md || 4;
+
+  const buttonBreakPointsMdOnChange = (e) => {
+    setCurrentModelSetting({
+      ...currentModelSetting,
+      grid: {
+        ...currentModelSetting?.grid,
+        buttonBreakPoints: {
+          ...currentModelSetting?.grid?.buttonBreakPoints,
+          md: e.target.value,
+        },
+      },
+    });
+  };
+
+  // const onSaveClick,
+
+  return (
+    <>
+      <Tabs>
+        {tabs.map((tab) => {
+          // if modelField.id includes "." it means that its a field model. and field model has type
+          const createTitleValue = modelField.id.includes('.')
+            ? (currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type] &&
+                currentModelSetting?.dynamicTables[modelField.type].header &&
+                currentModelSetting?.dynamicTables[modelField.type].header[
+                  tab.code
+                ]?.createTitle) ||
+              `${modelField.id}CreateTitle`
+            : (currentModelSetting?.header &&
+                currentModelSetting?.header[tab.code]?.createTitle) ||
+              `${modelField.id}CreateTitle`;
+
+          const createTitleOnChange = (e) => {
+            const createTitleSettingValue = modelField.id.includes('.')
+              ? {
+                  ...currentModelSetting,
+
+                  dynamicTables: {
+                    ...currentModelSetting.dynamicTables,
+                    [modelField.type]: {
+                      header: {
+                        ...currentModelSetting?.header,
+                        [tab.code]: {
+                          ...(currentModelSetting.header &&
+                            currentModelSetting?.header[tab.code]),
+                          createTitle: e.target.value,
+                        },
+                      },
+                    },
+                  },
+                }
+              : {
+                  ...currentModelSetting,
+                  header: {
+                    ...currentModelSetting?.header,
+                    [tab.code]: {
+                      ...(currentModelSetting.header &&
+                        currentModelSetting?.header[tab.code]),
+                      createTitle: e.target.value,
+                    },
+                  },
+                };
+            setCurrentModelSetting(createTitleSettingValue);
+          };
+
+          const createDescriptionValue = modelField.id.includes('.')
+            ? (currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type] &&
+                currentModelSetting?.dynamicTables[modelField.type].header &&
+                currentModelSetting?.dynamicTables[modelField.type].header[
+                  tab.code
+                ]?.createDescription) ||
+              `${modelField.id}CreateDescription`
+            : (currentModelSetting?.header &&
+                currentModelSetting?.header[tab.code]?.createDescription) ||
+              `${modelField.id}CreateDescription`;
+
+          const createDescriptionOnChange = (e) => {
+            const createDescriptionSettingValue = modelField.id.includes('.')
+              ? {
+                  ...currentModelSetting,
+
+                  dynamicTables: {
+                    ...currentModelSetting.dynamicTables,
+                    [modelField.type]: {
+                      header: {
+                        ...currentModelSetting?.header,
+                        [tab.code]: {
+                          ...(currentModelSetting.header &&
+                            currentModelSetting?.header[tab.code]),
+                          createDescription: e.target.value,
+                        },
+                      },
+                    },
+                  },
+                }
+              : {
+                  ...currentModelSetting,
+                  header: {
+                    ...currentModelSetting?.header,
+                    [tab.code]: {
+                      ...currentModelSetting?.header[tab.code],
+                      createDescription: e.target.value,
+                    },
+                  },
+                };
+            setCurrentModelSetting(createDescriptionSettingValue);
+          };
+
+          const updateTitleValue = modelField.id.includes('.')
+            ? (currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type] &&
+                currentModelSetting?.dynamicTables[modelField.type].header &&
+                currentModelSetting?.dynamicTables[modelField.type].header[
+                  tab.code
+                ]?.updateTitle) ||
+              `${modelField.id}UpdateTitle`
+            : (currentModelSetting?.header &&
+                currentModelSetting?.header[tab.code]?.updateTitle) ||
+              `${modelField.id}UpdateTitle`;
+
+          const updateTitleOnChange = (e) => {
+            const updateTitleSettingValue = modelField.id.includes('.')
+              ? {
+                  ...currentModelSetting,
+
+                  dynamicTables: {
+                    ...currentModelSetting.dynamicTables,
+                    [modelField.type]: {
+                      header: {
+                        ...currentModelSetting?.header,
+                        [tab.code]: {
+                          ...(currentModelSetting.header &&
+                            currentModelSetting?.header[tab.code]),
+                          updateTitle: e.target.value,
+                        },
+                      },
+                    },
+                  },
+                }
+              : {
+                  ...currentModelSetting,
+                  header: {
+                    ...currentModelSetting?.header,
+                    [tab.code]: {
+                      ...(currentModelSetting.header &&
+                        currentModelSetting?.header[tab.code]),
+                      updateTitle: e.target.value,
+                    },
+                  },
+                };
+            setCurrentModelSetting(updateTitleSettingValue);
+          };
+
+          const updateDescriptionValue = modelField.id.includes('.')
+            ? (currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type] &&
+                currentModelSetting?.dynamicTables[modelField.type].header &&
+                currentModelSetting?.dynamicTables[modelField.type].header[
+                  tab.code
+                ]?.updateDescription) ||
+              `${modelField.id}UpdateDescription`
+            : (currentModelSetting?.header &&
+                currentModelSetting?.header[tab.code]?.updateDescription) ||
+              `${modelField.id}UpdateDescription`;
+
+          const updateDescriptionOnChange = (e) => {
+            const updateDescriptionSettingValue = modelField.id.includes('.')
+              ? {
+                  ...currentModelSetting,
+
+                  dynamicTables: {
+                    ...currentModelSetting.dynamicTables,
+                    [modelField.type]: {
+                      header: {
+                        ...currentModelSetting?.header,
+                        [tab.code]: {
+                          ...(currentModelSetting.header &&
+                            currentModelSetting?.header[tab.code]),
+                          updateDescription: e.target.value,
+                        },
+                      },
+                    },
+                  },
+                }
+              : {
+                  ...currentModelSetting,
+                  header: {
+                    ...currentModelSetting?.header,
+                    [tab.code]: {
+                      ...(currentModelSetting.header &&
+                        currentModelSetting?.header[tab.code]),
+                      updateDescription: e.target.value,
+                    },
+                  },
+                };
+            setCurrentModelSetting(updateDescriptionSettingValue);
+          };
+
+          const listTitleValue = modelField.id.includes('.')
+            ? (currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type] &&
+                currentModelSetting?.dynamicTables[modelField.type].header &&
+                currentModelSetting?.dynamicTables[modelField.type].header[
+                  tab.code
+                ]?.listTitle) ||
+              `${modelField.id}ListTitle`
+            : (currentModelSetting?.header &&
+                currentModelSetting?.header[tab.code]?.listTitle) ||
+              `${modelField.id}ListTitle`;
+
+          const listTitleOnChange = (e) => {
+            const listTitleSettingValue = modelField.id.includes('.')
+              ? {
+                  ...currentModelSetting,
+
+                  dynamicTables: {
+                    ...currentModelSetting.dynamicTables,
+                    [modelField.type]: {
+                      header: {
+                        ...currentModelSetting?.header,
+                        [tab.code]: {
+                          ...(currentModelSetting.header &&
+                            currentModelSetting?.header[tab.code]),
+                          listTitle: e.target.value,
+                        },
+                      },
+                    },
+                  },
+                }
+              : {
+                  ...currentModelSetting,
+                  header: {
+                    ...currentModelSetting?.header,
+                    [tab.code]: {
+                      ...(currentModelSetting.header &&
+                        currentModelSetting?.header[tab.code]),
+                      listTitle: e.target.value,
+                    },
+                  },
+                };
+            setCurrentModelSetting(listTitleSettingValue);
+          };
+
+          const listDescriptionValue = modelField.id.includes('.')
+            ? (currentModelSetting?.dynamicTables &&
+                currentModelSetting?.dynamicTables[modelField.type] &&
+                currentModelSetting?.dynamicTables[modelField.type].header &&
+                currentModelSetting?.dynamicTables[modelField.type].header[
+                  tab.code
+                ]?.listDescription) ||
+              `${modelField.id}ListDescription`
+            : (currentModelSetting?.header &&
+                currentModelSetting?.header[tab.code]?.listDescription) ||
+              `${modelField.id}ListDescription`;
+
+          const listDescriptionOnChange = (e) => {
+            const listDescriptionSettingValue = modelField.id.includes('.')
+              ? {
+                  ...currentModelSetting,
+
+                  dynamicTables: {
+                    ...currentModelSetting.dynamicTables,
+                    [modelField.type]: {
+                      header: {
+                        ...currentModelSetting?.header,
+                        [tab.code]: {
+                          ...(currentModelSetting.header &&
+                            currentModelSetting?.header[tab.code]),
+                          listDescription: e.target.value,
+                        },
+                      },
+                    },
+                  },
+                }
+              : {
+                  ...currentModelSetting,
+                  header: {
+                    ...currentModelSetting?.header,
+                    [tab.code]: {
+                      ...(currentModelSetting.header &&
+                        currentModelSetting?.header[tab.code]),
+                      listDescription: e.target.value,
+                    },
+                  },
+                };
+            setCurrentModelSetting(listDescriptionSettingValue);
+          };
+
+          return (
+            <Tab key={tab.code} title={tab.title}>
+              {modelField?.create && (
+                <>
+                  <Input>
+                    <input
+                      value={createTitleValue}
+                      onChange={createTitleOnChange}
+                      type="text"
+                      placeholder="create title"
+                    />
+                  </Input>
+                  <Input>
+                    <input
+                      value={createDescriptionValue}
+                      onChange={createDescriptionOnChange}
+                      type="text"
+                      placeholder="create description"
+                    />
+                  </Input>
+                </>
+              )}
+
+              <br />
+              {modelField.update && (
+                <>
+                  <Input>
+                    <input
+                      value={updateTitleValue}
+                      onChange={updateTitleOnChange}
+                      type="text"
+                      placeholder="update title"
+                    />
+                  </Input>
+                  <Input>
+                    <input
+                      value={updateDescriptionValue}
+                      onChange={updateDescriptionOnChange}
+                      type="text"
+                      placeholder="update description"
+                    />
+                  </Input>
+                </>
+              )}
+              <br />
+              {(modelField.read || !modelField.id.includes('.')) && (
+                <>
+                  <Input>
+                    <input
+                      value={listTitleValue}
+                      onChange={listTitleOnChange}
+                      type="text"
+                      placeholder="list title"
+                    />
+                  </Input>
+                  <Input>
+                    <input
+                      value={listDescriptionValue}
+                      onChange={listDescriptionOnChange}
+                      type="text"
+                      placeholder="list description"
+                    />
+                  </Input>
+                </>
+              )}
+              <br />
+            </Tab>
+          );
+        })}
+      </Tabs>
+      <p>Grid</p>
+      <Input>
+        <input
+          value={cardBreakPointsXsValue}
+          onChange={cardBreakPointsXsOnChange}
+          type="text"
+          placeholder="cardBreakPoints xs"
+        />
+      </Input>
+      <Input>
+        <input
+          value={cardBreakPointsMdValue}
+          onChange={cardBreakPointsMdOnChange}
+          type="text"
+          placeholder="cardBreakPoints md"
+        />
+      </Input>
+      <br />
+
+      <Input>
+        <input
+          value={fieldBreakPointsXsValue}
+          onChange={fieldBreakPointsXsOnChange}
+          type="text"
+          placeholder="fieldBreakPoints xs"
+        />
+      </Input>
+      <Input>
+        <input
+          value={fieldBreakPointsMdValue}
+          onChange={fieldBreakPointsMdOnChange}
+          type="text"
+          placeholder="fieldBreakPoints md"
+        />
+      </Input>
+      <br />
+
+      <Input>
+        <input
+          value={buttonBreakPointsXsValue}
+          onChange={buttonBreakPointsXsOnChange}
+          type="text"
+          placeholder="buttonBreakPoints xs"
+        />
+      </Input>
+      <Input>
+        <input
+          value={buttonBreakPointsMdValue}
+          onChange={buttonBreakPointsMdOnChange}
+          type="text"
+          placeholder="buttonBreakPoints md"
+        />
+      </Input>
+
+      <Button
+        onClick={() => {
+          db.get('models')
+            .find({
+              id: modelField.id.includes('.')
+                ? modelField.id
+                : modelField.id.split('.')[0],
+            })
+            .get('plugins')
+            .get('pagesPath')
+            .get(owner)
+            .get(pagesPath.name)
+            .assign(currentModelSetting)
+            .write();
+        }}
+      >
+        Save
+      </Button>
+    </>
+  );
+};
 
 export const PagesPath = ({
   pageModels,
@@ -32,6 +566,7 @@ export const PagesPath = ({
   modelSelect,
   db,
 }) => {
+  const [newModelTable, setNewModelTable] = useState(null);
   const [pageModelIndex, setPageModelIndex] = useState(0);
   const [formTypeSelect, setFormTypeSelect] = useState([
     {
@@ -45,18 +580,16 @@ export const PagesPath = ({
   ]);
   useEffect(() => {
     setCurrentModelSetting(
-      pageModels[pageModelIndex]?.uiPlugins?.pagesPath[owner][pagesPath.name]
-        ?.self,
+      pageModels[pageModelIndex]?.plugins?.pagesPath[owner][pagesPath.name],
     );
   }, [pageModelIndex]);
-  console.log(currentModelSetting);
   return (
     <Card>
       <Tabs
         onSelect={(index) => {
           // const model = pageModels[index];
-          // if (model?.uiPlugins?.pagesPath[owner][pagesPath.name]?.self) {
-          //   setCurrentModelSetting(model?.uiPlugins?.pagesPath[owner][pagesPath.name]?.self);
+          // if (model?.plugins?.pagesPath[owner][pagesPath.name]?.self) {
+          //   setCurrentModelSetting(model?.plugins?.pagesPath[owner][pagesPath.name]?.self);
           // }
           setPageModelIndex(index);
         }}
@@ -70,277 +603,14 @@ export const PagesPath = ({
                   <Card>
                     <CardBody>
                       <p>Settings</p>
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.header?.createTitle ||
-                            `${pageModel.id}CreateTitle`
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              header: {
-                                ...currentModelSetting?.header,
-                                createTitle: e.target.value,
-                              },
-                            });
-                          }}
-                          type="text"
-                          placeholder="create title"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.header?.createDescription ||
-                            `${pageModel.id}CreateDescription`
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              header: {
-                                ...currentModelSetting?.header,
-                                createDescription: e.target.value,
-                              },
-                            });
-                          }}
-                          type="text"
-                          placeholder="create description"
-                        />
-                      </Input>
-
-                      <br />
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.header?.updateTitle ||
-                            `${pageModel.id}UpdateTitle`
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              header: {
-                                ...currentModelSetting?.header,
-                                updateTitle: e.target.value,
-                              },
-                            });
-                          }}
-                          type="text"
-                          placeholder="update title"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.header?.updateDescription ||
-                            `${pageModel.id}UpdateDescription`
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              header: {
-                                ...currentModelSetting?.header,
-                                updateDescription: e.target.value,
-                              },
-                            });
-                          }}
-                          type="text"
-                          placeholder="update description"
-                        />
-                      </Input>
-                      <br />
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.header?.listTitle ||
-                            `${pageModel.id}ListTitle`
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              header: {
-                                ...currentModelSetting?.header,
-                                listTitle: e.target.value,
-                              },
-                            });
-                          }}
-                          type="text"
-                          placeholder="list title"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.header?.listDescription ||
-                            `${pageModel.id}ListDescription`
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              header: {
-                                ...currentModelSetting?.header,
-                                listDescription: e.target.value,
-                              },
-                            });
-                          }}
-                          type="text"
-                          placeholder="list description"
-                        />
-                      </Input>
-                      <br />
-                      <p>Grid</p>
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.grid?.cardBreakPoints?.xs || 4
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              grid: {
-                                ...currentModelSetting?.grid,
-                                cardBreakPoints: {
-                                  ...currentModelSetting?.grid?.cardBreakPoints,
-                                  xs: e.target.value,
-                                },
-                              },
-                            });
-                          }}
-                          type="number"
-                          placeholder="cardBreakPoints xs"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.grid?.cardBreakPoints?.md || 4
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              grid: {
-                                ...currentModelSetting?.grid,
-                                cardBreakPoints: {
-                                  ...currentModelSetting?.grid?.cardBreakPoints,
-                                  md: e.target.value,
-                                },
-                              },
-                            });
-                          }}
-                          type="number"
-                          placeholder="cardBreakPoints md"
-                        />
-                      </Input>
-                      <br />
-
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.grid?.fieldBreakPoints?.xs || 4
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              grid: {
-                                ...currentModelSetting?.grid,
-                                fieldBreakPoints: {
-                                  ...currentModelSetting?.grid
-                                    ?.fieldBreakPoints,
-                                  xs: e.target.value,
-                                },
-                              },
-                            });
-                          }}
-                          type="number"
-                          placeholder="fieldBreakPoints xs"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.grid?.fieldBreakPoints?.md || 4
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              grid: {
-                                ...currentModelSetting?.grid,
-                                fieldBreakPoints: {
-                                  ...currentModelSetting?.grid
-                                    ?.fieldBreakPoints,
-                                  md: e.target.value,
-                                },
-                              },
-                            });
-                          }}
-                          type="number"
-                          placeholder="fieldBreakPoints md"
-                        />
-                      </Input>
-                      <br />
-
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.grid?.buttonBreakPoints?.xs ||
-                            4
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              grid: {
-                                ...currentModelSetting?.grid,
-                                buttonBreakPoints: {
-                                  ...currentModelSetting?.grid
-                                    ?.buttonBreakPoints,
-                                  xs: e.target.value,
-                                },
-                              },
-                            });
-                          }}
-                          type="number"
-                          placeholder="buttonBreakPoints xs"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          value={
-                            currentModelSetting?.grid?.buttonBreakPoints?.md ||
-                            4
-                          }
-                          onChange={(e) => {
-                            setCurrentModelSetting({
-                              ...currentModelSetting,
-                              grid: {
-                                ...currentModelSetting?.grid,
-                                buttonBreakPoints: {
-                                  ...currentModelSetting?.grid
-                                    ?.buttonBreakPoints,
-                                  md: e.target.value,
-                                },
-                              },
-                            });
-                          }}
-                          type="number"
-                          placeholder="buttonBreakPoints md"
-                        />
-                      </Input>
-                      <Button
-                        onClick={() => {
-                          db.get('models')
-                            .find({ id: pageModel.id })
-                            .get('uiPlugins')
-                            .get('pagesPath')
-                            .get(owner)
-                            .get(pagesPath.name)
-                            .assign({
-                              self: currentModelSetting,
-                            })
-                            .write();
-                        }}
-                      >
-                        Save
-                      </Button>
+                      <DynamicTableEdit
+                        owner={owner}
+                        pagesPath={pagesPath}
+                        db={db}
+                        modelField={pageModel}
+                        currentModelSetting={currentModelSetting}
+                        setCurrentModelSetting={setCurrentModelSetting}
+                      />
                     </CardBody>
                   </Card>
                 </Col>
@@ -390,105 +660,30 @@ export const PagesPath = ({
                     <CardBody>
                       <p>Create table</p>
                       <Select
-                        onChange={(option) => {}}
+                        onChange={(option) => {
+                          const modelField = pageModel.fields.find(
+                            (field) =>
+                              field.type === option.value &&
+                              field.list &&
+                              (field.create || field.read || field.update),
+                          );
+                          setNewModelTable(modelField);
+                        }}
                         options={modelSelect}
                         placeholder="Model"
                       />
                       <br />
 
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="create title"
+                      {newModelTable && (
+                        <DynamicTableEdit
+                          owner={owner}
+                          pagesPath={pagesPath}
+                          db={db}
+                          modelField={newModelTable}
+                          currentModelSetting={currentModelSetting}
+                          setCurrentModelSetting={setCurrentModelSetting}
                         />
-                      </Input>
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="create description"
-                        />
-                      </Input>
-
-                      <br />
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="update title"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="update description"
-                        />
-                      </Input>
-                      <br />
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="list title"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="list description"
-                        />
-                      </Input>
-                      <br />
-                      <p>Grid</p>
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="cardBreakPoints xs"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="cardBreakPoints md"
-                        />
-                      </Input>
-                      <br />
-
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="fieldBreakPoints xs"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="fieldBreakPoints md"
-                        />
-                      </Input>
-                      <br />
-
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="buttonBreakPoints xs"
-                        />
-                      </Input>
-                      <Input>
-                        <input
-                          onChange={(e) => {}}
-                          type="text"
-                          placeholder="buttonBreakPoints md"
-                        />
-                      </Input>
+                      )}
                     </CardBody>
                   </Card>
                 </Col>
@@ -535,6 +730,7 @@ export default function Login() {
       if (!models) {
         db.defaults(data.parentOwner).write();
       }
+
       const savedDb = db.value();
 
       setCurrentSettings(savedDb);
@@ -548,8 +744,8 @@ export default function Login() {
 
   const pagesPaths: any[] = [];
   currentSettings?.models?.map((model, modelInex) => {
-    if (model?.uiPlugins?.pagesPath && model?.uiPlugins?.pagesPath[owner]) {
-      const modelPagesPaths = model.uiPlugins.pagesPath[owner];
+    if (model?.plugins?.pagesPath && model?.plugins?.pagesPath[owner]) {
+      const modelPagesPaths = model.plugins.pagesPath[owner];
       for (const key in modelPagesPaths) {
         if (Object.prototype.hasOwnProperty.call(modelPagesPaths, key)) {
           const modelPagesPath = modelPagesPaths[key];
@@ -575,6 +771,7 @@ export default function Login() {
           </Tab>
           <Tab title="Add New Page Path">
             <AddNewPagesPath
+              currentSettings={currentSettings}
               owner={owner}
               modelSelect={modelSelect}
               db={db}
@@ -584,9 +781,9 @@ export default function Login() {
           {pagesPaths?.map((pagesPath, pagesPathIndex) => {
             const pageModels = currentSettings.models.filter(
               (model) =>
-                !!model?.uiPlugins?.pagesPath &&
-                !!model?.uiPlugins?.pagesPath[owner] &&
-                !!model?.uiPlugins?.pagesPath[owner][pagesPath.name],
+                !!model?.plugins?.pagesPath &&
+                !!model?.plugins?.pagesPath[owner] &&
+                !!model?.plugins?.pagesPath[owner][pagesPath.name],
             );
             return (
               <Tab key={pagesPathIndex} title={pagesPath.name}>
@@ -616,7 +813,13 @@ export default function Login() {
   }
 }
 
-const AddNewPagesPath = ({ setCurrentSettings, owner, db, modelSelect }) => {
+const AddNewPagesPath = ({
+  currentSettings,
+  setCurrentSettings,
+  owner,
+  db,
+  modelSelect,
+}) => {
   const [newPagesPath, setNewPagesPath] = useState({
     options: [],
     name: '',
@@ -655,12 +858,18 @@ const AddNewPagesPath = ({ setCurrentSettings, owner, db, modelSelect }) => {
         <Button
           onClick={() => {
             newPagesPath.options.map((option) => {
+              const model = currentSettings.models.find(
+                (model) => model.id === option.value,
+              );
               db.get('models')
                 .find({ id: option.value })
                 .assign({
-                  uiPlugins: {
+                  plugins: {
+                    ...model.plugins,
                     pagesPath: {
+                      ...model.plugins.pagesPath,
                       [owner]: {
+                        ...model.plugins.pagesPath[owner],
                         [newPagesPath.name]: {
                           name: newPagesPath.name,
                         },

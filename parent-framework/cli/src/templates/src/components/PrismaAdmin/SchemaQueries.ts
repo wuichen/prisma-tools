@@ -20,6 +20,7 @@ const fieldFragment = gql`
     editor
     upload
     relationField
+    plugins
   }
 `;
 
@@ -32,6 +33,7 @@ const modelFragment = gql`
     update
     idField
     displayFields
+    plugins
     fields {
       ...Field
     }
@@ -92,5 +94,11 @@ export const GET_PARENT_OWNER = gql`
 export const CREATE_PARENT_OWNER = gql`
   mutation createParentOwner($owner: String!, $models: [String!]!) {
     createParentOwner(owner: $owner, models: $models)
+  }
+`;
+
+export const CREATE_PARENT_ROOT = gql`
+  mutation createParentRoot {
+    createParentRoot
   }
 `;

@@ -392,15 +392,15 @@ const addCustomElements = () => {
       await ncp(parentBuilderSource, parentBuilderDestination);
       console.log(chalk.green('Successfully added parentbuilder'));
 
-      const settingsSource = path.join(
+      const prismaAdminSettingsSource = path.join(
         __dirname,
         '../templates/src/Components/PrismaAdmin/Settings',
       );
-      const settingsDestination = path.join(
+      const prismaAdminSettingsDestination = path.join(
         __dirname,
         '../../../example/src/Components/PrismaAdmin/Settings',
       );
-      await ncp(settingsSource, settingsDestination);
+      await ncp(prismaAdminSettingsSource, prismaAdminSettingsDestination);
       console.log(chalk.green('Successfully updated Settings'));
 
       const schemaQueriesSource = path.join(
@@ -413,6 +413,14 @@ const addCustomElements = () => {
       );
       await ncp(schemaQueriesSource, schemaQueriesDestination);
       console.log(chalk.green('Successfully updated Schemaqueries'));
+
+      const settingsSource = path.join(__dirname, '../templates/src/settings');
+      const settingsDestination = path.join(
+        __dirname,
+        '../../../example/src/settings',
+      );
+      await ncp(settingsSource, settingsDestination);
+      console.log(chalk.green('Successfully added Settings'));
 
       resolve();
     }, 500);
