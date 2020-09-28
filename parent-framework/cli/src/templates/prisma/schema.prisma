@@ -58,17 +58,35 @@ model Company {
   staffs            Staff[]
   stripe_account_id String?
   coupons           Coupon[]
+  orders            Order[]
+}
+
+model Order {
+  id         Int       @default(autoincrement()) @id
+  amount     Float?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId Int?
+  company    Company?  @relation(fields: [companyId], references: [id])
+  companyId  Int?
+}
+
+model OrderItem {
+  id        Int     @default(autoincrement()) @id
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
 }
 
 model Product {
-  id                Int      @default(autoincrement()) @id
+  id                Int         @default(autoincrement()) @id
   title             String
-  slug              String   @unique
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  active            Boolean  @default(false)
+  slug              String      @unique
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  active            Boolean     @default(false)
   stripe_price_id   String?
   stripe_product_id String?
+  orderItems        OrderItem[]
 }
 
 model Coupon {
@@ -89,6 +107,7 @@ model Customer {
   company            Company  @relation(fields: [companyId], references: [id])
   companyId          Int
   stripe_customer_id String?
+  orders             Order[]
 }
 
 model Staff {

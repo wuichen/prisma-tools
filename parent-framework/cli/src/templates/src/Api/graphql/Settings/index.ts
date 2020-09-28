@@ -119,6 +119,7 @@ export const SchemaMutations = extendType({
             }
             const displayFields = []
             const plugins = {
+              pagesPath: {},
               hooks,
               active: {},
               slug: '',
