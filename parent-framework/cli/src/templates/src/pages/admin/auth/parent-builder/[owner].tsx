@@ -1250,13 +1250,13 @@ export default function Login() {
                             onChange={async (option) => {
                               await updateModel({
                                 variables: {
-                                  id: option.value,
+                                  id: model.id,
                                   role: `prisma/framework/owners/${owner}.json`,
                                   data: {
                                     ...data,
                                     plugins: {
                                       ...data.plugins,
-                                      parent: owner,
+                                      parent: option.value,
                                     },
                                   },
                                 },
