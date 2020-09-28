@@ -18,7 +18,8 @@ import {
   UPDATE_MODEL,
 } from 'Components/PrismaAdmin/SchemaQueries';
 import { useQuery, useMutation } from '@apollo/client';
-import adminSettings from '../../../../../prisma/adminSettings.json';
+// import adminSettings from '../../../../../prisma/adminSettings.json';
+import root from '../../../../../prisma/framework/root.json';
 import countries from 'settings/countries';
 const Input = styled(InputGroup)`
   margin-bottom: 10px;
@@ -41,11 +42,11 @@ export const FormBlockEdit = ({
   const [updateModel] = useMutation(UPDATE_MODEL);
   tabs.push({ title: 'id', code: 'id' });
   const model = modelField.id.includes('.')
-    ? currentSettings?.models.find((model) => model.id === modelField.type)
+    ? currentSettings?.models.find(
+        (model) => model.id === modelField.id.split('.')[0],
+      )
     : currentSettings?.models.find((model) => model.id === modelField.id);
-  const modelPagesPath = modelField.id.includes('.')
-    ? model?.plugins?.pagesPath[pagesPath.name]
-    : model?.plugins?.pagesPath[pagesPath.name];
+  const modelPagesPath = model?.plugins?.pagesPath[pagesPath.name];
 
   const formTypeSelect = [
     {
@@ -96,171 +97,178 @@ export const FormBlockEdit = ({
       });
     }
   }
+  console.log(modelField);
+  if (model) {
+    return (
+      <>
+        <h6>form blocks</h6>
+        <Select
+          onChange={(option) => {
+            if (option.value === 'new') {
+              setCurrentForm(newForm);
+            } else {
+              console.log(forms[option.value]);
+              setCurrentForm(forms[option.value]);
+            }
+          }}
+          options={formsSelect}
+        />
+        {currentForm && (
+          <Card>
+            <CardBody>
+              <p>form block</p>
+              <Tabs>
+                {tabs.map((tab) => {
+                  const formTitleValue = currentForm?.header[tab.code]?.title;
 
-  return (
-    <>
-      <h6>form blocks</h6>
-      <Select
-        onChange={(option) => {
-          if (option.value === 'new') {
-            setCurrentForm(newForm);
-          } else {
-            console.log(forms[option.value]);
-            setCurrentForm(forms[option.value]);
-          }
-        }}
-        options={formsSelect}
-      />
-      {currentForm && (
-        <Card>
-          <CardBody>
-            <p>form block</p>
-            <Tabs>
-              {tabs.map((tab) => {
-                const formTitleValue = currentForm?.header[tab.code]?.title;
+                  const formTitleOnChange = (e) => {
+                    setCurrentForm({
+                      ...currentForm,
+                      header: {
+                        ...currentForm.header,
+                        [tab.code]: {
+                          ...currentForm.header[tab.code],
+                          title: e.target.value,
+                        },
+                      },
+                    });
+                  };
 
-                const formTitleOnChange = (e) => {
+                  const formDescriptionValue =
+                    currentForm?.header[tab.code]?.description;
+
+                  const formDescriptionOnChange = (e) => {
+                    setCurrentForm({
+                      ...currentForm,
+                      header: {
+                        ...currentForm.header,
+                        [tab.code]: {
+                          ...currentForm.header[tab.code],
+                          description: e.target.value,
+                        },
+                      },
+                    });
+                  };
+
+                  return (
+                    <Tab key={tab.code} title={tab.title}>
+                      <Input>
+                        <input
+                          onChange={formTitleOnChange}
+                          value={formTitleValue}
+                          type="text"
+                          placeholder="title"
+                        />
+                      </Input>
+                      <br />
+                      <Input>
+                        <input
+                          onChange={formDescriptionOnChange}
+                          value={formDescriptionValue}
+                          type="text"
+                          placeholder="description"
+                        />
+                      </Input>
+                    </Tab>
+                  );
+                })}
+              </Tabs>
+              <br />
+              <Select
+                onChange={(option) => {
                   setCurrentForm({
                     ...currentForm,
-                    header: {
-                      ...currentForm.header,
-                      [tab.code]: {
-                        ...currentForm.header[tab.code],
-                        title: e.target.value,
-                      },
-                    },
+                    type: option.value,
                   });
-                };
-
-                const formDescriptionValue =
-                  currentForm?.header[tab.code]?.description;
-
-                const formDescriptionOnChange = (e) => {
-                  setCurrentForm({
-                    ...currentForm,
-                    header: {
-                      ...currentForm.header,
-                      [tab.code]: {
-                        ...currentForm.header[tab.code],
-                        description: e.target.value,
-                      },
-                    },
-                  });
-                };
-
+                }}
+                options={formTypeSelect}
+                placeholder="block type"
+              />
+              <br />
+              {model?.fields?.map((field, index) => {
                 return (
-                  <Tab key={tab.code} title={tab.title}>
-                    <Input>
-                      <input
-                        onChange={formTitleOnChange}
-                        value={formTitleValue}
-                        type="text"
-                        placeholder="title"
-                      />
-                    </Input>
-                    <br />
-                    <Input>
-                      <input
-                        onChange={formDescriptionOnChange}
-                        value={formDescriptionValue}
-                        type="text"
-                        placeholder="description"
-                      />
-                    </Input>
-                  </Tab>
+                  <span key={index} style={{ margin: '15px' }}>
+                    <Checkbox
+                      checked={currentForm?.fields[field.name]}
+                      status={index}
+                      onChange={(value) => {
+                        setCurrentForm({
+                          ...currentForm,
+                          fields: {
+                            ...currentForm.fields,
+                            [field.name]: value,
+                          },
+                        });
+                      }}
+                    >
+                      {field.name}
+                    </Checkbox>
+                  </span>
                 );
               })}
-            </Tabs>
-            <br />
-            <Select
-              onChange={(option) => {
-                setCurrentForm({
-                  ...currentForm,
-                  type: option.value,
-                });
-              }}
-              options={formTypeSelect}
-              placeholder="block type"
-            />
-            <br />
-            {model.fields.map((field, index) => {
-              return (
-                <span key={index} style={{ margin: '15px' }}>
-                  <Checkbox
-                    checked={currentForm?.fields[field.name]}
-                    status={index}
-                    onChange={(value) => {
-                      setCurrentForm({
-                        ...currentForm,
-                        fields: {
-                          ...currentForm.fields,
-                          [field.name]: value,
-                        },
-                      });
-                    }}
-                  >
-                    {field.name}
-                  </Checkbox>
-                </span>
-              );
-            })}
-            <Button
-              onClick={async () => {
-                let newModelPageForm = {};
-                if (modelField.id.includes('.')) {
-                  newModelPageForm = {
-                    ...modelPagesPath,
-                    dynamicTables: {
-                      ...modelPagesPath.dynamicTables,
-                      [modelField.type]: {
-                        forms: {
-                          ...modelPagesPath.dynamicTables[modelField.type]
-                            .forms,
-                          [currentForm.header.id.title]: currentForm,
+              <Button
+                onClick={async () => {
+                  let newModelPageForm = {};
+                  if (modelField.id.includes('.')) {
+                    newModelPageForm = {
+                      ...modelPagesPath,
+                      dynamicTables: {
+                        ...modelPagesPath?.dynamicTables,
+                        [modelField.type]: {
+                          ...modelPagesPath?.dynamicTables[modelField.type],
+                          forms: {
+                            ...modelPagesPath?.dynamicTables[modelField.type]
+                              ?.forms,
+                            [currentForm.header.id.title]: currentForm,
+                          },
                         },
                       },
-                    },
-                  };
-                } else {
-                  newModelPageForm = {
-                    ...modelPagesPath,
-                    forms: {
-                      ...modelPagesPath.forms,
-                      [currentForm.header.id.title]: currentForm,
-                    },
-                  };
-                }
-                console.log(newModelPageForm);
-                let data = JSON.parse(JSON.stringify(model));
-                delete data.id;
+                    };
+                  } else {
+                    newModelPageForm = {
+                      ...modelPagesPath,
+                      forms: {
+                        ...modelPagesPath.forms,
+                        [currentForm.header.id.title]: currentForm,
+                      },
+                    };
+                  }
 
-                await updateModel({
-                  variables: {
-                    role: `prisma/framework/owners/${owner}.json`,
-                    id: model.id,
-                    data: {
-                      ...data,
-                      plugins: {
-                        ...data.plugins,
-                        pagesPath: {
-                          ...data.plugins.pagesPath,
-                          [pagesPath.name]: newModelPageForm,
+                  console.log(newModelPageForm, model);
+                  let data = JSON.parse(JSON.stringify(model));
+                  delete data.id;
+
+                  await updateModel({
+                    variables: {
+                      role: `prisma/framework/owners/${owner}.json`,
+                      id: model.id,
+                      data: {
+                        ...data,
+                        plugins: {
+                          ...data.plugins,
+                          pagesPath: {
+                            ...data.plugins.pagesPath,
+                            [pagesPath.name]: newModelPageForm,
+                          },
                         },
                       },
                     },
-                  },
-                });
-                refetch();
-                setCurrentForm(null);
-              }}
-            >
-              Save
-            </Button>
-          </CardBody>
-        </Card>
-      )}
-    </>
-  );
+                  });
+
+                  refetch();
+                  setCurrentForm(null);
+                }}
+              >
+                Save
+              </Button>
+            </CardBody>
+          </Card>
+        )}
+      </>
+    );
+  } else {
+    return null;
+  }
 };
 
 export const DynamicTableEdit = ({
@@ -280,12 +288,12 @@ export const DynamicTableEdit = ({
   const [updateModel] = useMutation(UPDATE_MODEL);
   tabs.push({ title: 'id', code: 'id' });
   const model = modelField.id.includes('.')
-    ? currentSettings?.models.find((model) => model.id === modelField.type)
+    ? currentSettings?.models.find(
+        (model) => model.id === modelField.id.split('.')[0],
+      )
     : currentSettings?.models.find((model) => model.id === modelField.id);
   const [modelPagesPath, setModelPagesPath] = useState(
-    modelField.id.includes('.')
-      ? model?.plugins?.pagesPath[pagesPath.name]
-      : model?.plugins?.pagesPath[pagesPath.name],
+    model?.plugins?.pagesPath[pagesPath.name],
   );
   console.log(model, modelPagesPath);
   const fieldBreakPointsMdValue = modelField.id.includes('.')
@@ -565,475 +573,499 @@ export const DynamicTableEdit = ({
   };
   // const onSaveClick,
 
-  return (
-    <>
-      <Tabs>
-        {tabs.map((tab) => {
-          // if modelField.id includes "." it means that its a field model. and field model has type
+  if (model) {
+    return (
+      <>
+        <Tabs>
+          {tabs.map((tab) => {
+            // if modelField.id includes "." it means that its a field model. and field model has type
 
-          const createTitleValue = modelField.id.includes('.')
-            ? (modelPagesPath?.dynamicTables &&
-                modelPagesPath?.dynamicTables[modelField.type] &&
-                modelPagesPath?.dynamicTables[modelField.type].header &&
-                modelPagesPath?.dynamicTables[modelField.type].header[tab.code]
-                  ?.createTitle) ||
-              `${modelField.id}CreateTitle`
-            : (modelPagesPath?.header &&
-                modelPagesPath?.header[tab.code]?.createTitle) ||
-              `${modelField.id}CreateTitle`;
+            const createTitleValue = modelField.id.includes('.')
+              ? (modelPagesPath?.dynamicTables &&
+                  modelPagesPath?.dynamicTables[modelField.type] &&
+                  modelPagesPath?.dynamicTables[modelField.type].header &&
+                  modelPagesPath?.dynamicTables[modelField.type].header[
+                    tab.code
+                  ]?.createTitle) ||
+                `${modelField.id}CreateTitle`
+              : (modelPagesPath?.header &&
+                  modelPagesPath?.header[tab.code]?.createTitle) ||
+                `${modelField.id}CreateTitle`;
 
-          const createTitleOnChange = (e) => {
-            const createTitleSettingValue = modelField.id.includes('.')
-              ? {
-                  ...modelPagesPath,
-                  dynamicTables: {
-                    ...modelPagesPath.dynamicTables,
-                    [modelField.type]: {
-                      ...(modelPagesPath?.dynamicTables &&
-                        modelPagesPath.dynamicTables[modelField.type]),
-                      header: {
-                        ...(modelPagesPath?.dynamicTables?.[modelField.type] &&
-                          modelPagesPath?.dynamicTables[modelField.type]
-                            .header),
-                        [tab.code]: {
+            const createTitleOnChange = (e) => {
+              const createTitleSettingValue = modelField.id.includes('.')
+                ? {
+                    ...modelPagesPath,
+                    dynamicTables: {
+                      ...modelPagesPath?.dynamicTables,
+                      [modelField.type]: {
+                        ...(modelPagesPath?.dynamicTables &&
+                          modelPagesPath?.dynamicTables[modelField.type]),
+                        header: {
                           ...(modelPagesPath?.dynamicTables?.[
                             modelField.type
                           ] &&
                             modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header &&
-                            modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header[tab.code]),
-                          createTitle: e.target.value,
+                              .header),
+                          [tab.code]: {
+                            ...(modelPagesPath?.dynamicTables?.[
+                              modelField.type
+                            ] &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header[tab.code]),
+                            createTitle: e.target.value,
+                          },
                         },
                       },
                     },
-                  },
-                }
-              : {
-                  ...modelPagesPath,
-                  header: {
-                    ...modelPagesPath?.header,
-                    [tab.code]: {
-                      ...(modelPagesPath.header &&
-                        modelPagesPath?.header[tab.code]),
-                      createTitle: e.target.value,
+                  }
+                : {
+                    ...modelPagesPath,
+                    header: {
+                      ...modelPagesPath?.header,
+                      [tab.code]: {
+                        ...(modelPagesPath.header &&
+                          modelPagesPath?.header[tab.code]),
+                        createTitle: e.target.value,
+                      },
                     },
-                  },
-                };
-            setModelPagesPath(createTitleSettingValue);
-          };
+                  };
+              setModelPagesPath(createTitleSettingValue);
+            };
 
-          const createDescriptionValue = modelField.id.includes('.')
-            ? (modelPagesPath?.dynamicTables &&
-                modelPagesPath?.dynamicTables[modelField.type] &&
-                modelPagesPath?.dynamicTables[modelField.type].header &&
-                modelPagesPath?.dynamicTables[modelField.type].header[tab.code]
-                  ?.createDescription) ||
-              `${modelField.id}CreateDescription`
-            : (modelPagesPath?.header &&
-                modelPagesPath?.header[tab.code]?.createDescription) ||
-              `${modelField.id}CreateDescription`;
+            const createDescriptionValue = modelField.id.includes('.')
+              ? (modelPagesPath?.dynamicTables &&
+                  modelPagesPath?.dynamicTables[modelField.type] &&
+                  modelPagesPath?.dynamicTables[modelField.type].header &&
+                  modelPagesPath?.dynamicTables[modelField.type].header[
+                    tab.code
+                  ]?.createDescription) ||
+                `${modelField.id}CreateDescription`
+              : (modelPagesPath?.header &&
+                  modelPagesPath?.header[tab.code]?.createDescription) ||
+                `${modelField.id}CreateDescription`;
 
-          const createDescriptionOnChange = (e) => {
-            const createDescriptionSettingValue = modelField.id.includes('.')
-              ? {
-                  ...modelPagesPath,
-                  dynamicTables: {
-                    ...modelPagesPath.dynamicTables,
-                    [modelField.type]: {
-                      ...(modelPagesPath?.dynamicTables &&
-                        modelPagesPath.dynamicTables[modelField.type]),
-                      header: {
-                        ...(modelPagesPath?.dynamicTables?.[modelField.type] &&
-                          modelPagesPath?.dynamicTables[modelField.type]
-                            .header),
-                        [tab.code]: {
+            const createDescriptionOnChange = (e) => {
+              const createDescriptionSettingValue = modelField.id.includes('.')
+                ? {
+                    ...modelPagesPath,
+                    dynamicTables: {
+                      ...modelPagesPath?.dynamicTables,
+                      [modelField.type]: {
+                        ...(modelPagesPath?.dynamicTables &&
+                          modelPagesPath.dynamicTables[modelField.type]),
+                        header: {
                           ...(modelPagesPath?.dynamicTables?.[
                             modelField.type
                           ] &&
                             modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header &&
-                            modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header[tab.code]),
-                          createDescription: e.target.value,
+                              .header),
+                          [tab.code]: {
+                            ...(modelPagesPath?.dynamicTables?.[
+                              modelField.type
+                            ] &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header[tab.code]),
+                            createDescription: e.target.value,
+                          },
                         },
                       },
                     },
-                  },
-                }
-              : {
-                  ...modelPagesPath,
-                  header: {
-                    ...modelPagesPath?.header,
-                    [tab.code]: {
-                      ...modelPagesPath?.header[tab.code],
-                      createDescription: e.target.value,
+                  }
+                : {
+                    ...modelPagesPath,
+                    header: {
+                      ...modelPagesPath?.header,
+                      [tab.code]: {
+                        ...modelPagesPath?.header[tab.code],
+                        createDescription: e.target.value,
+                      },
                     },
-                  },
-                };
-            setModelPagesPath(createDescriptionSettingValue);
-          };
+                  };
+              setModelPagesPath(createDescriptionSettingValue);
+            };
 
-          const updateTitleValue = modelField.id.includes('.')
-            ? (modelPagesPath?.dynamicTables &&
-                modelPagesPath?.dynamicTables[modelField.type] &&
-                modelPagesPath?.dynamicTables[modelField.type].header &&
-                modelPagesPath?.dynamicTables[modelField.type].header[tab.code]
-                  ?.updateTitle) ||
-              `${modelField.id}UpdateTitle`
-            : (modelPagesPath?.header &&
-                modelPagesPath?.header[tab.code]?.updateTitle) ||
-              `${modelField.id}UpdateTitle`;
+            const updateTitleValue = modelField.id.includes('.')
+              ? (modelPagesPath?.dynamicTables &&
+                  modelPagesPath?.dynamicTables[modelField.type] &&
+                  modelPagesPath?.dynamicTables[modelField.type].header &&
+                  modelPagesPath?.dynamicTables[modelField.type].header[
+                    tab.code
+                  ]?.updateTitle) ||
+                `${modelField.id}UpdateTitle`
+              : (modelPagesPath?.header &&
+                  modelPagesPath?.header[tab.code]?.updateTitle) ||
+                `${modelField.id}UpdateTitle`;
 
-          const updateTitleOnChange = (e) => {
-            const updateTitleSettingValue = modelField.id.includes('.')
-              ? {
-                  ...modelPagesPath,
-                  dynamicTables: {
-                    ...modelPagesPath.dynamicTables,
-                    [modelField.type]: {
-                      ...(modelPagesPath?.dynamicTables &&
-                        modelPagesPath.dynamicTables[modelField.type]),
-                      header: {
-                        ...(modelPagesPath?.dynamicTables?.[modelField.type] &&
-                          modelPagesPath?.dynamicTables[modelField.type]
-                            .header),
-                        [tab.code]: {
+            const updateTitleOnChange = (e) => {
+              const updateTitleSettingValue = modelField.id.includes('.')
+                ? {
+                    ...modelPagesPath,
+                    dynamicTables: {
+                      ...modelPagesPath?.dynamicTables,
+                      [modelField.type]: {
+                        ...(modelPagesPath?.dynamicTables &&
+                          modelPagesPath.dynamicTables[modelField.type]),
+                        header: {
                           ...(modelPagesPath?.dynamicTables?.[
                             modelField.type
                           ] &&
                             modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header &&
-                            modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header[tab.code]),
-                          updateTitle: e.target.value,
+                              .header),
+                          [tab.code]: {
+                            ...(modelPagesPath?.dynamicTables?.[
+                              modelField.type
+                            ] &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header[tab.code]),
+                            updateTitle: e.target.value,
+                          },
                         },
                       },
                     },
-                  },
-                }
-              : {
-                  ...modelPagesPath,
-                  header: {
-                    ...modelPagesPath?.header,
-                    [tab.code]: {
-                      ...(modelPagesPath.header &&
-                        modelPagesPath?.header[tab.code]),
-                      updateTitle: e.target.value,
+                  }
+                : {
+                    ...modelPagesPath,
+                    header: {
+                      ...modelPagesPath?.header,
+                      [tab.code]: {
+                        ...(modelPagesPath.header &&
+                          modelPagesPath?.header[tab.code]),
+                        updateTitle: e.target.value,
+                      },
                     },
-                  },
-                };
-            setModelPagesPath(updateTitleSettingValue);
-          };
+                  };
+              setModelPagesPath(updateTitleSettingValue);
+            };
 
-          const updateDescriptionValue = modelField.id.includes('.')
-            ? (modelPagesPath?.dynamicTables &&
-                modelPagesPath?.dynamicTables[modelField.type] &&
-                modelPagesPath?.dynamicTables[modelField.type].header &&
-                modelPagesPath?.dynamicTables[modelField.type].header[tab.code]
-                  ?.updateDescription) ||
-              `${modelField.id}UpdateDescription`
-            : (modelPagesPath?.header &&
-                modelPagesPath?.header[tab.code]?.updateDescription) ||
-              `${modelField.id}UpdateDescription`;
+            const updateDescriptionValue = modelField.id.includes('.')
+              ? (modelPagesPath?.dynamicTables &&
+                  modelPagesPath?.dynamicTables[modelField.type] &&
+                  modelPagesPath?.dynamicTables[modelField.type].header &&
+                  modelPagesPath?.dynamicTables[modelField.type].header[
+                    tab.code
+                  ]?.updateDescription) ||
+                `${modelField.id}UpdateDescription`
+              : (modelPagesPath?.header &&
+                  modelPagesPath?.header[tab.code]?.updateDescription) ||
+                `${modelField.id}UpdateDescription`;
 
-          const updateDescriptionOnChange = (e) => {
-            const updateDescriptionSettingValue = modelField.id.includes('.')
-              ? {
-                  ...modelPagesPath,
-                  dynamicTables: {
-                    ...modelPagesPath.dynamicTables,
-                    [modelField.type]: {
-                      ...(modelPagesPath?.dynamicTables &&
-                        modelPagesPath.dynamicTables[modelField.type]),
-                      header: {
-                        ...(modelPagesPath?.dynamicTables?.[modelField.type] &&
-                          modelPagesPath?.dynamicTables[modelField.type]
-                            .header),
-                        [tab.code]: {
+            const updateDescriptionOnChange = (e) => {
+              const updateDescriptionSettingValue = modelField.id.includes('.')
+                ? {
+                    ...modelPagesPath,
+                    dynamicTables: {
+                      ...modelPagesPath?.dynamicTables,
+                      [modelField.type]: {
+                        ...(modelPagesPath?.dynamicTables &&
+                          modelPagesPath.dynamicTables[modelField.type]),
+                        header: {
                           ...(modelPagesPath?.dynamicTables?.[
                             modelField.type
                           ] &&
                             modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header &&
-                            modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header[tab.code]),
-                          updateDescription: e.target.value,
+                              .header),
+                          [tab.code]: {
+                            ...(modelPagesPath?.dynamicTables?.[
+                              modelField.type
+                            ] &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header[tab.code]),
+                            updateDescription: e.target.value,
+                          },
                         },
                       },
                     },
-                  },
-                }
-              : {
-                  ...modelPagesPath,
-                  header: {
-                    ...modelPagesPath?.header,
-                    [tab.code]: {
-                      ...(modelPagesPath.header &&
-                        modelPagesPath?.header[tab.code]),
-                      updateDescription: e.target.value,
+                  }
+                : {
+                    ...modelPagesPath,
+                    header: {
+                      ...modelPagesPath?.header,
+                      [tab.code]: {
+                        ...(modelPagesPath.header &&
+                          modelPagesPath?.header[tab.code]),
+                        updateDescription: e.target.value,
+                      },
                     },
-                  },
-                };
-            setModelPagesPath(updateDescriptionSettingValue);
-          };
+                  };
+              setModelPagesPath(updateDescriptionSettingValue);
+            };
 
-          const listTitleValue = modelField.id.includes('.')
-            ? (modelPagesPath?.dynamicTables &&
-                modelPagesPath?.dynamicTables[modelField.type] &&
-                modelPagesPath?.dynamicTables[modelField.type].header &&
-                modelPagesPath?.dynamicTables[modelField.type].header[tab.code]
-                  ?.listTitle) ||
-              `${modelField.id}ListTitle`
-            : (modelPagesPath?.header &&
-                modelPagesPath?.header[tab.code]?.listTitle) ||
-              `${modelField.id}ListTitle`;
+            const listTitleValue = modelField.id.includes('.')
+              ? (modelPagesPath?.dynamicTables &&
+                  modelPagesPath?.dynamicTables[modelField.type] &&
+                  modelPagesPath?.dynamicTables[modelField.type].header &&
+                  modelPagesPath?.dynamicTables[modelField.type].header[
+                    tab.code
+                  ]?.listTitle) ||
+                `${modelField.id}ListTitle`
+              : (modelPagesPath?.header &&
+                  modelPagesPath?.header[tab.code]?.listTitle) ||
+                `${modelField.id}ListTitle`;
 
-          const listTitleOnChange = (e) => {
-            const listTitleSettingValue = modelField.id.includes('.')
-              ? {
-                  ...modelPagesPath,
-                  dynamicTables: {
-                    ...modelPagesPath.dynamicTables,
-                    [modelField.type]: {
-                      ...(modelPagesPath?.dynamicTables &&
-                        modelPagesPath.dynamicTables[modelField.type]),
-                      header: {
-                        ...(modelPagesPath?.dynamicTables?.[modelField.type] &&
-                          modelPagesPath?.dynamicTables[modelField.type]
-                            .header),
-                        [tab.code]: {
+            const listTitleOnChange = (e) => {
+              const listTitleSettingValue = modelField.id.includes('.')
+                ? {
+                    ...modelPagesPath,
+                    dynamicTables: {
+                      ...modelPagesPath?.dynamicTables,
+                      [modelField.type]: {
+                        ...(modelPagesPath?.dynamicTables &&
+                          modelPagesPath.dynamicTables[modelField.type]),
+                        header: {
                           ...(modelPagesPath?.dynamicTables?.[
                             modelField.type
                           ] &&
                             modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header &&
-                            modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header[tab.code]),
-                          listTitle: e.target.value,
+                              .header),
+                          [tab.code]: {
+                            ...(modelPagesPath?.dynamicTables?.[
+                              modelField.type
+                            ] &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header[tab.code]),
+                            listTitle: e.target.value,
+                          },
                         },
                       },
                     },
-                  },
-                }
-              : {
-                  ...modelPagesPath,
-                  header: {
-                    ...modelPagesPath?.header,
-                    [tab.code]: {
-                      ...(modelPagesPath.header &&
-                        modelPagesPath?.header[tab.code]),
-                      listTitle: e.target.value,
+                  }
+                : {
+                    ...modelPagesPath,
+                    header: {
+                      ...modelPagesPath?.header,
+                      [tab.code]: {
+                        ...(modelPagesPath.header &&
+                          modelPagesPath?.header[tab.code]),
+                        listTitle: e.target.value,
+                      },
                     },
-                  },
-                };
+                  };
 
-            setModelPagesPath(listTitleSettingValue);
-          };
+              setModelPagesPath(listTitleSettingValue);
+            };
 
-          const listDescriptionValue = modelField.id.includes('.')
-            ? (modelPagesPath?.dynamicTables &&
-                modelPagesPath?.dynamicTables[modelField.type] &&
-                modelPagesPath?.dynamicTables[modelField.type].header &&
-                modelPagesPath?.dynamicTables[modelField.type].header[tab.code]
-                  ?.listDescription) ||
-              `${modelField.id}ListDescription`
-            : (modelPagesPath?.header &&
-                modelPagesPath?.header[tab.code]?.listDescription) ||
-              `${modelField.id}ListDescription`;
+            const listDescriptionValue = modelField.id.includes('.')
+              ? (modelPagesPath?.dynamicTables &&
+                  modelPagesPath?.dynamicTables[modelField.type] &&
+                  modelPagesPath?.dynamicTables[modelField.type].header &&
+                  modelPagesPath?.dynamicTables[modelField.type].header[
+                    tab.code
+                  ]?.listDescription) ||
+                `${modelField.id}ListDescription`
+              : (modelPagesPath?.header &&
+                  modelPagesPath?.header[tab.code]?.listDescription) ||
+                `${modelField.id}ListDescription`;
 
-          const listDescriptionOnChange = (e) => {
-            const listDescriptionSettingValue = modelField.id.includes('.')
-              ? {
-                  ...modelPagesPath,
-                  dynamicTables: {
-                    ...modelPagesPath.dynamicTables,
-                    [modelField.type]: {
-                      ...(modelPagesPath?.dynamicTables &&
-                        modelPagesPath.dynamicTables[modelField.type]),
-                      header: {
-                        ...(modelPagesPath?.dynamicTables?.[modelField.type] &&
-                          modelPagesPath?.dynamicTables[modelField.type]
-                            .header),
-                        [tab.code]: {
+            const listDescriptionOnChange = (e) => {
+              const listDescriptionSettingValue = modelField.id.includes('.')
+                ? {
+                    ...modelPagesPath,
+                    dynamicTables: {
+                      ...modelPagesPath?.dynamicTables,
+                      [modelField.type]: {
+                        ...(modelPagesPath?.dynamicTables &&
+                          modelPagesPath.dynamicTables[modelField.type]),
+                        header: {
                           ...(modelPagesPath?.dynamicTables?.[
                             modelField.type
                           ] &&
                             modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header &&
-                            modelPagesPath?.dynamicTables[modelField.type]
-                              ?.header[tab.code]),
-                          listDescription: e.target.value,
+                              .header),
+                          [tab.code]: {
+                            ...(modelPagesPath?.dynamicTables?.[
+                              modelField.type
+                            ] &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header &&
+                              modelPagesPath?.dynamicTables[modelField.type]
+                                ?.header[tab.code]),
+                            listDescription: e.target.value,
+                          },
                         },
                       },
                     },
-                  },
-                }
-              : {
-                  ...modelPagesPath,
-                  header: {
-                    ...modelPagesPath?.header,
-                    [tab.code]: {
-                      ...(modelPagesPath.header &&
-                        modelPagesPath?.header[tab.code]),
-                      listDescription: e.target.value,
+                  }
+                : {
+                    ...modelPagesPath,
+                    header: {
+                      ...modelPagesPath?.header,
+                      [tab.code]: {
+                        ...(modelPagesPath.header &&
+                          modelPagesPath?.header[tab.code]),
+                        listDescription: e.target.value,
+                      },
                     },
-                  },
-                };
-            setModelPagesPath(listDescriptionSettingValue);
-          };
+                  };
+              setModelPagesPath(listDescriptionSettingValue);
+            };
 
-          return (
-            <Tab key={tab.code} title={tab.title}>
-              {modelField?.create && (
-                <>
-                  <Input>
-                    <input
-                      value={createTitleValue}
-                      onChange={createTitleOnChange}
-                      type="text"
-                      placeholder="create title"
-                    />
-                  </Input>
-                  <Input>
-                    <input
-                      value={createDescriptionValue}
-                      onChange={createDescriptionOnChange}
-                      type="text"
-                      placeholder="create description"
-                    />
-                  </Input>
-                </>
-              )}
+            return (
+              <Tab key={tab.code} title={tab.title}>
+                {modelField?.create && (
+                  <>
+                    <Input>
+                      <input
+                        value={createTitleValue}
+                        onChange={createTitleOnChange}
+                        type="text"
+                        placeholder="create title"
+                      />
+                    </Input>
+                    <Input>
+                      <input
+                        value={createDescriptionValue}
+                        onChange={createDescriptionOnChange}
+                        type="text"
+                        placeholder="create description"
+                      />
+                    </Input>
+                  </>
+                )}
 
-              <br />
-              {modelField.update && (
-                <>
-                  <Input>
-                    <input
-                      value={updateTitleValue}
-                      onChange={updateTitleOnChange}
-                      type="text"
-                      placeholder="update title"
-                    />
-                  </Input>
-                  <Input>
-                    <input
-                      value={updateDescriptionValue}
-                      onChange={updateDescriptionOnChange}
-                      type="text"
-                      placeholder="update description"
-                    />
-                  </Input>
-                </>
-              )}
-              <br />
-              {(modelField.read || !modelField.id.includes('.')) && (
-                <>
-                  <Input>
-                    <input
-                      value={listTitleValue}
-                      onChange={listTitleOnChange}
-                      type="text"
-                      placeholder="list title"
-                    />
-                  </Input>
-                  <Input>
-                    <input
-                      value={listDescriptionValue}
-                      onChange={listDescriptionOnChange}
-                      type="text"
-                      placeholder="list description"
-                    />
-                  </Input>
-                </>
-              )}
-              <br />
-            </Tab>
-          );
-        })}
-      </Tabs>
-      <p>Grid</p>
-      <Input>
-        <input
-          value={cardBreakPointsXsValue}
-          onChange={cardBreakPointsXsOnChange}
-          type="text"
-          placeholder="cardBreakPoints xs"
-        />
-      </Input>
-      <Input>
-        <input
-          value={cardBreakPointsMdValue}
-          onChange={cardBreakPointsMdOnChange}
-          type="text"
-          placeholder="cardBreakPoints md"
-        />
-      </Input>
-      <br />
+                <br />
+                {modelField.update && (
+                  <>
+                    <Input>
+                      <input
+                        value={updateTitleValue}
+                        onChange={updateTitleOnChange}
+                        type="text"
+                        placeholder="update title"
+                      />
+                    </Input>
+                    <Input>
+                      <input
+                        value={updateDescriptionValue}
+                        onChange={updateDescriptionOnChange}
+                        type="text"
+                        placeholder="update description"
+                      />
+                    </Input>
+                  </>
+                )}
+                <br />
+                {(modelField.read || !modelField.id.includes('.')) && (
+                  <>
+                    <Input>
+                      <input
+                        value={listTitleValue}
+                        onChange={listTitleOnChange}
+                        type="text"
+                        placeholder="list title"
+                      />
+                    </Input>
+                    <Input>
+                      <input
+                        value={listDescriptionValue}
+                        onChange={listDescriptionOnChange}
+                        type="text"
+                        placeholder="list description"
+                      />
+                    </Input>
+                  </>
+                )}
+                <br />
+              </Tab>
+            );
+          })}
+        </Tabs>
+        <p>Grid</p>
+        <Input>
+          <input
+            value={cardBreakPointsXsValue}
+            onChange={cardBreakPointsXsOnChange}
+            type="text"
+            placeholder="cardBreakPoints xs"
+          />
+        </Input>
+        <Input>
+          <input
+            value={cardBreakPointsMdValue}
+            onChange={cardBreakPointsMdOnChange}
+            type="text"
+            placeholder="cardBreakPoints md"
+          />
+        </Input>
+        <br />
 
-      <Input>
-        <input
-          value={fieldBreakPointsXsValue}
-          onChange={fieldBreakPointsXsOnChange}
-          type="text"
-          placeholder="fieldBreakPoints xs"
-        />
-      </Input>
-      <Input>
-        <input
-          value={fieldBreakPointsMdValue}
-          onChange={fieldBreakPointsMdOnChange}
-          type="text"
-          placeholder="fieldBreakPoints md"
-        />
-      </Input>
-      <br />
+        <Input>
+          <input
+            value={fieldBreakPointsXsValue}
+            onChange={fieldBreakPointsXsOnChange}
+            type="text"
+            placeholder="fieldBreakPoints xs"
+          />
+        </Input>
+        <Input>
+          <input
+            value={fieldBreakPointsMdValue}
+            onChange={fieldBreakPointsMdOnChange}
+            type="text"
+            placeholder="fieldBreakPoints md"
+          />
+        </Input>
+        <br />
 
-      <Input>
-        <input
-          value={buttonBreakPointsXsValue}
-          onChange={buttonBreakPointsXsOnChange}
-          type="text"
-          placeholder="buttonBreakPoints xs"
-        />
-      </Input>
-      <Input>
-        <input
-          value={buttonBreakPointsMdValue}
-          onChange={buttonBreakPointsMdOnChange}
-          type="text"
-          placeholder="buttonBreakPoints md"
-        />
-      </Input>
+        <Input>
+          <input
+            value={buttonBreakPointsXsValue}
+            onChange={buttonBreakPointsXsOnChange}
+            type="text"
+            placeholder="buttonBreakPoints xs"
+          />
+        </Input>
+        <Input>
+          <input
+            value={buttonBreakPointsMdValue}
+            onChange={buttonBreakPointsMdOnChange}
+            type="text"
+            placeholder="buttonBreakPoints md"
+          />
+        </Input>
 
-      <Button
-        onClick={async () => {
-          let data = JSON.parse(JSON.stringify(model));
-          delete data.id;
-          await updateModel({
-            variables: {
-              role: `prisma/framework/owners/${owner}.json`,
-              id: model.id,
-              data: {
-                ...data,
-                plugins: {
-                  ...data.plugins,
-                  pagesPath: {
-                    ...data.plugins.pagesPath,
-                    [pagesPath.name]: modelPagesPath,
+        <Button
+          onClick={async () => {
+            let data = JSON.parse(JSON.stringify(model));
+            delete data.id;
+            await updateModel({
+              variables: {
+                role: `prisma/framework/owners/${owner}.json`,
+                id: modelField.id.includes('.')
+                  ? modelField.id.split('.')[0]
+                  : model.id,
+                data: {
+                  ...data,
+                  plugins: {
+                    ...data.plugins,
+                    pagesPath: {
+                      ...data.plugins.pagesPath,
+                      [pagesPath.name]: modelPagesPath,
+                    },
                   },
                 },
               },
-            },
-          });
-          refetch();
-        }}
-      >
-        Save
-      </Button>
-    </>
-  );
+            });
+            refetch();
+          }}
+        >
+          Save
+        </Button>
+      </>
+    );
+  } else {
+    return null;
+  }
 };
 
 export const PagesPath = ({
@@ -1140,7 +1172,7 @@ export const PagesPath = ({
 
 export default function Login() {
   const [currentSettings, setCurrentSettings] = useState(null);
-
+  const [updateModel] = useMutation(UPDATE_MODEL);
   const {
     query: { owner },
   } = useRouter();
@@ -1178,14 +1210,68 @@ export default function Login() {
     }
   });
 
+  const ownerModels = currentSettings?.models?.filter((model) => {
+    const ownerFieldExist = model.fields.find((field) => {
+      if (!field.list && field.type === owner) {
+        return field;
+      }
+    });
+
+    if (ownerFieldExist) {
+      return true;
+    }
+  });
+  const ownerModelsSelect = ownerModels?.map((model) => {
+    return {
+      label: model.name,
+      value: model.id,
+    };
+  });
+
   if (currentSettings) {
     return (
       <>
         <Tabs>
           <Tab title="Model Permission">
-            <Card>
-              <Settings role={`prisma/framework/owners/${owner}.json`} />
-            </Card>
+            <Row>
+              {currentSettings.models.map((model, index) => {
+                console.log(model);
+                let data = JSON.parse(JSON.stringify(model));
+                delete data.id;
+                return (
+                  <Col breakPoint={{ xs: 3 }} key={index}>
+                    <Card>
+                      <CardBody>
+                        <p>{model.id}</p>
+                        {model?.plugins?.parent ? (
+                          <div>{model.plugins.parent}</div>
+                        ) : (
+                          <Select
+                            onChange={async (option) => {
+                              await updateModel({
+                                variables: {
+                                  id: option.value,
+                                  role: `prisma/framework/owners/${owner}.json`,
+                                  data: {
+                                    ...data,
+                                    plugins: {
+                                      ...data.plugins,
+                                      parent: owner,
+                                    },
+                                  },
+                                },
+                              });
+                            }}
+                            options={ownerModelsSelect}
+                          />
+                        )}
+                      </CardBody>
+                    </Card>
+                  </Col>
+                );
+              })}
+            </Row>
+            <Settings role={`prisma/framework/owners/${owner}.json`} />
           </Tab>
           <Tab title="Add New Page Path">
             <AddNewPagesPath
@@ -1193,6 +1279,8 @@ export default function Login() {
               owner={owner}
               setCurrentSettings={setCurrentSettings}
               refetch={refetch}
+              ownerModels={ownerModels}
+              ownerModelsSelect={ownerModelsSelect}
             />
           </Tab>
           {pagesPaths?.map((pagesPath, pagesPathIndex) => {
@@ -1219,6 +1307,7 @@ export default function Login() {
   } else {
     return (
       <AddDefaultOwnerModels
+        currentSettings={currentSettings}
         owner={owner}
         refetch={refetch}
         setCurrentSettings={setCurrentSettings}
@@ -1229,6 +1318,8 @@ export default function Login() {
 
 const AddNewPagesPath = ({
   currentSettings,
+  ownerModels,
+  ownerModelsSelect,
   setCurrentSettings,
   owner,
   refetch,
@@ -1237,23 +1328,7 @@ const AddNewPagesPath = ({
     options: [],
     name: '',
   });
-  const ownerModels = currentSettings.models.filter((model) => {
-    const ownerFieldExist = model.fields.find((field) => {
-      if (!field.list && field.type === owner) {
-        return field;
-      }
-    });
 
-    if (ownerFieldExist) {
-      return true;
-    }
-  });
-  const ownerModelsSelect = ownerModels.map((model) => {
-    return {
-      label: model.name,
-      value: model.id,
-    };
-  });
   const [updateModel] = useMutation(UPDATE_MODEL);
   return (
     <Card style={{ height: '500px' }}>
@@ -1375,11 +1450,16 @@ const AddNewPagesPath = ({
   );
 };
 
-const AddDefaultOwnerModels = ({ setCurrentSettings, owner, refetch }) => {
+const AddDefaultOwnerModels = ({
+  setCurrentSettings,
+  currentSettings,
+  owner,
+  refetch,
+}) => {
   const [defaultOwnerModels, setDefaultOwnerModels] = useState([]);
   const [createParentOwner] = useMutation(CREATE_PARENT_OWNER);
-  const ownerModels = adminSettings?.models
-    ? adminSettings.models
+  const ownerModels = root?.models
+    ? root.models
         .filter((model) => {
           const ownerFieldExist = model.fields.find((field) => {
             if (!field.list && field.type === owner) {

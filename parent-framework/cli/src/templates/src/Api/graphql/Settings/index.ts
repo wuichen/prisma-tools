@@ -197,9 +197,29 @@ export const SchemaMutations = extendType({
         const rootFile = fs.readFileSync(rootPath)
         let rootJson = JSON.parse(rootFile)
 
-        rootJson.models = rootJson.models.filter((model) => {
-          return models.includes(model.id)
-        })
+        rootJson.models = rootJson.models
+          // .filter((model) => {
+          //   return models.includes(model.id)
+          // })
+          .map((model) => {
+            if (models.includes(model.id)) {
+              return {
+                ...model,
+                plugins: {
+                  ...model.plugins,
+                  parent: owner,
+                },
+              }
+            } else {
+              return {
+                ...model,
+                plugins: {
+                  ...model.plugins,
+                  parent: '',
+                },
+              }
+            }
+          })
 
         const ownerFile = fs.writeFileSync(ownerPath, JSON.stringify(rootJson, null, 2))
         return rootJson
