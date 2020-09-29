@@ -1170,7 +1170,7 @@ export const PagesPath = ({
   );
 };
 
-export default function Login() {
+export default function Owner() {
   const [currentSettings, setCurrentSettings] = useState(null);
   const [updateModel] = useMutation(UPDATE_MODEL);
   const {
@@ -1231,6 +1231,7 @@ export default function Login() {
   if (currentSettings) {
     return (
       <>
+        <h4>{owner}'s children models</h4>
         <Tabs>
           <Tab title="Model Permission">
             <Row>
@@ -1244,7 +1245,7 @@ export default function Login() {
                       <CardBody>
                         <p>{model.id}</p>
                         {model?.plugins?.parent ? (
-                          <div>{model.plugins.parent}</div>
+                          <div>Parent: {model.plugins.parent}</div>
                         ) : (
                           <Select
                             onChange={async (option) => {
@@ -1261,6 +1262,7 @@ export default function Login() {
                                   },
                                 },
                               });
+                              refetch();
                             }}
                             options={ownerModelsSelect}
                           />
