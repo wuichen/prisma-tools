@@ -47,6 +47,7 @@ export const FormBlockEdit = ({
         (model) => model.id === modelField.id.split('.')[0],
       )
     : currentSettings?.models.find((model) => model.id === modelField.id);
+
   const modelPagesPath = model?.plugins?.pagesPath[pagesPath.name];
 
   const formTypeSelect = [
@@ -118,6 +119,44 @@ export const FormBlockEdit = ({
           <Card>
             <CardBody>
               <p>form block</p>
+              <Button
+                onClick={async () => {
+                  let newModelPageForm = JSON.parse(
+                    JSON.stringify(modelPagesPath),
+                  );
+                  if (modelField.id.includes('.')) {
+                    delete newModelPageForm?.dynamicTables[modelField.type]
+                      ?.forms[currentForm.header.id.title];
+                  } else {
+                    delete newModelPageForm?.forms[currentForm.header.id.title];
+                  }
+
+                  let data = JSON.parse(JSON.stringify(model));
+                  delete data.id;
+                  setCurrentForm(null);
+
+                  await updateModel({
+                    variables: {
+                      role: `prisma/framework/owners/${owner}.json`,
+                      id: model.id,
+                      data: {
+                        ...data,
+                        plugins: {
+                          ...data.plugins,
+                          pagesPath: {
+                            ...data.plugins.pagesPath,
+                            [pagesPath.name]: newModelPageForm,
+                          },
+                        },
+                      },
+                    },
+                  });
+
+                  refetch();
+                }}
+              >
+                Delete
+              </Button>
               <Tabs>
                 {tabs.map((tab) => {
                   const formTitleValue = currentForm?.header[tab.code]?.title;
@@ -190,39 +229,72 @@ export const FormBlockEdit = ({
               />
               <br />
               <p>Form Fields</p>
-              {model?.fields?.map((field, index) => {
-                const rootModel = modelField.id.includes('.')
-                  ? root.models.find(
-                      (rootmodel) => rootmodel.id === modelField.type,
-                    )
-                  : root.models.find(
-                      (rootmodel) => rootmodel.id === modelField.id,
+              {modelField.id.includes('.') ? (
+                <>
+                  {currentSettings.models
+                    .find((model) => {
+                      return model.id === modelField.type;
+                    })
+                    .fields.map((field, index) => {
+                      if (field?.create || field?.update || field?.read) {
+                        return (
+                          <span key={index} style={{ margin: '15px' }}>
+                            <Checkbox
+                              checked={currentForm?.fields[field.name]}
+                              onChange={(value) => {
+                                setCurrentForm({
+                                  ...currentForm,
+                                  fields: {
+                                    ...currentForm.fields,
+                                    [field.name]: value,
+                                  },
+                                });
+                              }}
+                            >
+                              {field.name}
+                            </Checkbox>
+                          </span>
+                        );
+                      }
+                    })}
+                </>
+              ) : (
+                <>
+                  {model?.fields?.map((field, index) => {
+                    const ownerModel = currentSettings.models.find(
+                      (ownermodel) => ownermodel.id === modelField.id,
                     );
-                const rootField = rootModel.fields.find(
-                  (rootfield) => rootfield.id === field.id,
-                );
-                if (rootField.create || rootField.update || rootField.read) {
-                  return (
-                    <span key={index} style={{ margin: '15px' }}>
-                      <Checkbox
-                        checked={currentForm?.fields[field.name]}
-                        status={index}
-                        onChange={(value) => {
-                          setCurrentForm({
-                            ...currentForm,
-                            fields: {
-                              ...currentForm.fields,
-                              [field.name]: value,
-                            },
-                          });
-                        }}
-                      >
-                        {field.name}
-                      </Checkbox>
-                    </span>
-                  );
-                }
-              })}
+                    const ownerField = ownerModel.fields.find((ownerfield) => {
+                      return ownerfield.id === field.id;
+                    });
+                    if (
+                      ownerField?.create ||
+                      ownerField?.update ||
+                      ownerField?.read
+                    ) {
+                      return (
+                        <span key={index} style={{ margin: '15px' }}>
+                          <Checkbox
+                            checked={currentForm?.fields[field.name]}
+                            onChange={(value) => {
+                              setCurrentForm({
+                                ...currentForm,
+                                fields: {
+                                  ...currentForm.fields,
+                                  [field.name]: value,
+                                },
+                              });
+                            }}
+                          >
+                            {field.name}
+                          </Checkbox>
+                        </span>
+                      );
+                    }
+                  })}
+                </>
+              )}
+
               <Button
                 onClick={async () => {
                   let newModelPageForm = {};
@@ -1109,7 +1181,8 @@ export const PagesPath = ({
   pagesPath,
   refetch,
 }) => {
-  const [modelTable, setModelPagesPathTable] = useState(null);
+  const [modelRelatedTable, setModelRelatedTable] = useState(null);
+  console.log(modelRelatedTable);
   return (
     <Card>
       <Tabs>
@@ -1164,35 +1237,39 @@ export const PagesPath = ({
                         (field) => field.type === option.value,
                       );
 
-                      setModelPagesPathTable(modelField);
+                      setModelRelatedTable(modelField);
                     }}
                     options={modelTableSelect}
                     placeholder="Model"
                   />
                 </Col>{' '}
               </Row>
-              {modelTable && (
+              {modelRelatedTable && (
                 <Row>
-                  <Col breakPoint={{ xs: 6 }}>
-                    <DynamicTableEdit
-                      refetch={refetch}
-                      owner={owner}
-                      pagesPath={pagesPath}
-                      modelField={modelTable}
-                      currentSettings={currentSettings}
-                      setCurrentSettings={setCurrentSettings}
-                    />
-                  </Col>
-                  <Col breakPoint={{ xs: 6 }}>
-                    <FormBlockEdit
-                      refetch={refetch}
-                      owner={owner}
-                      pagesPath={pagesPath}
-                      modelField={modelTable}
-                      currentSettings={currentSettings}
-                      setCurrentSettings={setCurrentSettings}
-                    />
-                  </Col>
+                  {modelRelatedTable.read && (
+                    <Col breakPoint={{ xs: 6 }}>
+                      <DynamicTableEdit
+                        refetch={refetch}
+                        owner={owner}
+                        pagesPath={pagesPath}
+                        modelField={modelRelatedTable}
+                        currentSettings={currentSettings}
+                        setCurrentSettings={setCurrentSettings}
+                      />
+                    </Col>
+                  )}
+                  {(modelRelatedTable.update || modelRelatedTable.create) && (
+                    <Col breakPoint={{ xs: 6 }}>
+                      <FormBlockEdit
+                        refetch={refetch}
+                        owner={owner}
+                        pagesPath={pagesPath}
+                        modelField={modelRelatedTable}
+                        currentSettings={currentSettings}
+                        setCurrentSettings={setCurrentSettings}
+                      />
+                    </Col>
+                  )}
                 </Row>
               )}
             </Tab>
@@ -1274,7 +1351,6 @@ export default function Owner() {
           <Tab title="Model Permission">
             <Row>
               {currentSettings.models.map((model, index) => {
-                console.log(model);
                 let data = JSON.parse(JSON.stringify(model));
                 delete data.id;
                 return (
