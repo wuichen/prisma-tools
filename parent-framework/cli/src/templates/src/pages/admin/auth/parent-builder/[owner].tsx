@@ -12,6 +12,7 @@ import Select from '@paljs/ui/Select';
 import Row from '@paljs/ui/Row';
 import Col from '@paljs/ui/Col';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import {
   GET_PARENT_OWNER,
   CREATE_PARENT_OWNER,
@@ -152,6 +153,7 @@ export const FormBlockEdit = ({
 
                   return (
                     <Tab key={tab.code} title={tab.title}>
+                      <p>Form Title</p>
                       <Input>
                         <input
                           onChange={formTitleOnChange}
@@ -161,6 +163,7 @@ export const FormBlockEdit = ({
                         />
                       </Input>
                       <br />
+                      <p>Form Description</p>
                       <Input>
                         <input
                           onChange={formDescriptionOnChange}
@@ -185,6 +188,7 @@ export const FormBlockEdit = ({
                 placeholder="block type"
               />
               <br />
+              <p>Form Fields</p>
               {model?.fields?.map((field, index) => {
                 return (
                   <span key={index} style={{ margin: '15px' }}>
@@ -914,6 +918,7 @@ export const DynamicTableEdit = ({
               <Tab key={tab.code} title={tab.title}>
                 {modelField?.create && (
                   <>
+                    <p>Create Title</p>
                     <Input>
                       <input
                         value={createTitleValue}
@@ -922,6 +927,7 @@ export const DynamicTableEdit = ({
                         placeholder="create title"
                       />
                     </Input>
+                    <p>Create Description</p>
                     <Input>
                       <input
                         value={createDescriptionValue}
@@ -936,6 +942,7 @@ export const DynamicTableEdit = ({
                 <br />
                 {modelField.update && (
                   <>
+                    <p>Update Title</p>
                     <Input>
                       <input
                         value={updateTitleValue}
@@ -944,6 +951,8 @@ export const DynamicTableEdit = ({
                         placeholder="update title"
                       />
                     </Input>
+                    <p>Update Description</p>
+
                     <Input>
                       <input
                         value={updateDescriptionValue}
@@ -957,6 +966,7 @@ export const DynamicTableEdit = ({
                 <br />
                 {(modelField.read || !modelField.id.includes('.')) && (
                   <>
+                    <p>List Title</p>
                     <Input>
                       <input
                         value={listTitleValue}
@@ -965,6 +975,7 @@ export const DynamicTableEdit = ({
                         placeholder="list title"
                       />
                     </Input>
+                    <p>List Description</p>
                     <Input>
                       <input
                         value={listDescriptionValue}
@@ -981,6 +992,8 @@ export const DynamicTableEdit = ({
           })}
         </Tabs>
         <p>Grid</p>
+        <p>Card breakPoint xs</p>
+
         <Input>
           <input
             value={cardBreakPointsXsValue}
@@ -989,6 +1002,8 @@ export const DynamicTableEdit = ({
             placeholder="cardBreakPoints xs"
           />
         </Input>
+        <p>Card breakPoint md</p>
+
         <Input>
           <input
             value={cardBreakPointsMdValue}
@@ -998,7 +1013,7 @@ export const DynamicTableEdit = ({
           />
         </Input>
         <br />
-
+        <p>Field breakPoint xs</p>
         <Input>
           <input
             value={fieldBreakPointsXsValue}
@@ -1007,6 +1022,8 @@ export const DynamicTableEdit = ({
             placeholder="fieldBreakPoints xs"
           />
         </Input>
+        <p>Field breakPoint md</p>
+
         <Input>
           <input
             value={fieldBreakPointsMdValue}
@@ -1016,6 +1033,7 @@ export const DynamicTableEdit = ({
           />
         </Input>
         <br />
+        <p>Button breakPoint xs</p>
 
         <Input>
           <input
@@ -1025,6 +1043,8 @@ export const DynamicTableEdit = ({
             placeholder="buttonBreakPoints xs"
           />
         </Input>
+        <p>Button breakPoint md</p>
+
         <Input>
           <input
             value={buttonBreakPointsMdValue}
@@ -1231,6 +1251,9 @@ export default function Owner() {
   if (currentSettings) {
     return (
       <>
+        <Link href="/admin/auth/parent-builder">
+          <Button size="Small">To Root</Button>
+        </Link>
         <h4>{owner}'s children models</h4>
         <Tabs>
           <Tab title="Model Permission">
@@ -1405,14 +1428,14 @@ const AddNewPagesPath = ({
                   };
                 }
               });
-              const dynamicTables = [];
+              const dynamicTables = {};
               model.fields.map((field) => {
                 if (field.list && field.kind === 'object') {
-                  dynamicTables.push({
+                  dynamicTables[field.type] = {
                     type: field.type,
                     header,
                     grid,
-                  });
+                  };
                 }
               });
 
