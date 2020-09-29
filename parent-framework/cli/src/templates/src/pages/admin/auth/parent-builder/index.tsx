@@ -31,7 +31,7 @@ export default function ParentBuilder() {
     (enumModel) => enumModel.name === 'OwnerType',
   );
   const [createParentRoot] = useMutation(CREATE_PARENT_ROOT);
-  const { data, error, loading } = useQuery(GET_PARENT_ROOT);
+  const { data, error, loading, refetch } = useQuery(GET_PARENT_ROOT);
 
   return (
     <div>
@@ -58,7 +58,14 @@ export default function ParentBuilder() {
         </div>
       ) : (
         <div>
-          <Button onClick={() => createParentRoot()}>Create Parent Root</Button>
+          <Button
+            onClick={async () => {
+              await createParentRoot();
+              refetch();
+            }}
+          >
+            Create Parent Root
+          </Button>
         </div>
       )}
     </div>

@@ -177,6 +177,7 @@ export const FormBlockEdit = ({
                 })}
               </Tabs>
               <br />
+              <p>Block display type</p>
               <Select
                 onChange={(option) => {
                   setCurrentForm({
@@ -190,25 +191,37 @@ export const FormBlockEdit = ({
               <br />
               <p>Form Fields</p>
               {model?.fields?.map((field, index) => {
-                return (
-                  <span key={index} style={{ margin: '15px' }}>
-                    <Checkbox
-                      checked={currentForm?.fields[field.name]}
-                      status={index}
-                      onChange={(value) => {
-                        setCurrentForm({
-                          ...currentForm,
-                          fields: {
-                            ...currentForm.fields,
-                            [field.name]: value,
-                          },
-                        });
-                      }}
-                    >
-                      {field.name}
-                    </Checkbox>
-                  </span>
+                const rootModel = modelField.id.includes('.')
+                  ? root.models.find(
+                      (rootmodel) => rootmodel.id === modelField.type,
+                    )
+                  : root.models.find(
+                      (rootmodel) => rootmodel.id === modelField.id,
+                    );
+                const rootField = rootModel.fields.find(
+                  (rootfield) => rootfield.id === field.id,
                 );
+                if (rootField.create || rootField.update || rootField.read) {
+                  return (
+                    <span key={index} style={{ margin: '15px' }}>
+                      <Checkbox
+                        checked={currentForm?.fields[field.name]}
+                        status={index}
+                        onChange={(value) => {
+                          setCurrentForm({
+                            ...currentForm,
+                            fields: {
+                              ...currentForm.fields,
+                              [field.name]: value,
+                            },
+                          });
+                        }}
+                      >
+                        {field.name}
+                      </Checkbox>
+                    </span>
+                  );
+                }
               })}
               <Button
                 onClick={async () => {
@@ -1204,8 +1217,6 @@ export default function Owner() {
     skip: !owner,
   });
 
-  const [currentModelSetting, setCurrentModelSetting] = useState({});
-
   useEffect(() => {
     if (data?.parentOwner) {
       setCurrentSettings(data.parentOwner);
@@ -1231,6 +1242,9 @@ export default function Owner() {
   });
 
   const ownerModels = currentSettings?.models?.filter((model) => {
+    if (model.id === owner) {
+      return true;
+    }
     const ownerFieldExist = model.fields.find((field) => {
       if (!field.list && field.type === owner) {
         return field;
@@ -1247,6 +1261,7 @@ export default function Owner() {
       value: model.id,
     };
   });
+  const [editing, setEditing] = useState(null);
 
   if (currentSettings) {
     return (
@@ -1267,8 +1282,16 @@ export default function Owner() {
                     <Card>
                       <CardBody>
                         <p>{model.id}</p>
-                        {model?.plugins?.parent ? (
-                          <div>Parent: {model.plugins.parent}</div>
+                        {model?.plugins?.parent && editing?.id !== model?.id ? (
+                          <>
+                            <div>Parent: {model.plugins.parent}</div>
+                            <Button
+                              size="Small"
+                              onClick={() => setEditing(model)}
+                            >
+                              Change
+                            </Button>
+                          </>
                         ) : (
                           <Select
                             onChange={async (option) => {
@@ -1285,6 +1308,7 @@ export default function Owner() {
                                   },
                                 },
                               });
+                              setEditing(null);
                               refetch();
                             }}
                             options={ownerModelsSelect}
@@ -1504,7 +1528,10 @@ const AddDefaultOwnerModels = ({
         })
     : [];
   return (
-    <CardBody>
+    <div>
+      <Link href="/admin/auth/parent-builder">
+        <Button size="Small">To Root</Button>
+      </Link>
       <p>Please select models that has this owner as their Parent model</p>
 
       <Select
@@ -1530,6 +1557,6 @@ const AddDefaultOwnerModels = ({
       >
         Confirm
       </Button>
-    </CardBody>
+    </div>
   );
 };
