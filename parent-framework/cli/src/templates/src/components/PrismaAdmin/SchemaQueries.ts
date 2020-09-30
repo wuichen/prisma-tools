@@ -102,3 +102,9 @@ export const CREATE_PARENT_ROOT = gql`
     createParentRoot
   }
 `;
+
+export const GENERATE_PARENT_OWNER_PAGES = gql`
+  mutation generateParentOwnerPages($owner: String!) {
+    generateParentOwnerPages(owner: $owner)
+  }
+`;

@@ -17,6 +17,7 @@ import {
   GET_PARENT_OWNER,
   CREATE_PARENT_OWNER,
   UPDATE_MODEL,
+  GENERATE_PARENT_OWNER_PAGES,
 } from 'Components/PrismaAdmin/SchemaQueries';
 import { useQuery, useMutation } from '@apollo/client';
 // import adminSettings from '../../../../../prisma/adminSettings.json';
@@ -1339,7 +1340,7 @@ export default function Owner() {
     };
   });
   const [editing, setEditing] = useState(null);
-
+  const [generatePages] = useMutation(GENERATE_PARENT_OWNER_PAGES);
   if (currentSettings) {
     return (
       <>
@@ -1347,6 +1348,18 @@ export default function Owner() {
           <Button size="Small">To Root</Button>
         </Link>
         <h4>{owner}'s children models</h4>
+        <Button
+          size="Small"
+          onClick={() => {
+            generatePages({
+              variables: {
+                owner,
+              },
+            });
+          }}
+        >
+          Generate Pages
+        </Button>
         <Tabs>
           <Tab title="Model Permission">
             <Row>

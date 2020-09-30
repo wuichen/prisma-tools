@@ -5,6 +5,8 @@ import fs from 'fs'
 import path from 'path'
 import adminSettings from '../../../../prisma/adminSettings'
 import { GraphQLJSON } from 'graphql-type-json'
+const { format, Options: PrettierOptions } = require('prettier')
+
 export const SchemaQueries = extendType({
   type: 'Query',
   definition(t) {
@@ -172,6 +174,109 @@ export const SchemaMutations = extendType({
         const rootJson = JSON.parse(rootFile)
 
         return rootJson
+      },
+    })
+    t.field('generateParentOwnerPages', {
+      type: GraphQLJSON,
+      args: {
+        owner: stringArg({ nullable: false }),
+      },
+      resolve: async (_, { owner }, {}) => {
+        const ownerPath = `prisma/framework/owners/${owner}.json`
+        const ownerPathExists = fs.existsSync(ownerPath)
+
+        if (!ownerPathExists) {
+          throw new Error('Please initialize the owner path first')
+        }
+
+        const ownerFile = fs.readFileSync(ownerPath)
+        const ownerJson = JSON.parse(ownerFile)
+
+        for (let index = 0; index < ownerJson.models.length; index++) {
+          const model = ownerJson.models[index]
+          if (model?.plugins?.pagesPath) {
+            const pagesPath = model.plugins.pagesPath
+            for (const key in pagesPath) {
+              if (Object.prototype.hasOwnProperty.call(pagesPath, key) && key.length > 0) {
+                const page = pagesPath[key]
+
+                if (!fs.existsSync(`src/pages/admin/${owner}`)) {
+                  fs.mkdirSync(`src/pages/admin/${owner}`)
+                }
+                if (!fs.existsSync(`src/pages/admin/${owner}/${page.name}`)) {
+                  fs.mkdirSync(`src/pages/admin/${owner}/${page.name}`)
+                }
+
+                let dynamicTables = JSON.parse(JSON.stringify(page.dynamicTables))
+
+                for (const key in dynamicTables) {
+                  if (Object.prototype.hasOwnProperty.call(dynamicTables, key)) {
+                    let model = dynamicTables[key]
+                    if (model.header && model.header.id) {
+                      model.header = model.header.id
+                    }
+                    const formArray = []
+                    for (const key in model.forms) {
+                      if (Object.prototype.hasOwnProperty.call(model.forms, key)) {
+                        const form = model.forms[key]
+                        formArray.push({
+                          ...form,
+                          header: form.header.id,
+                        })
+                      }
+                    }
+                    model.forms = formArray
+                  }
+                }
+                const forms = []
+
+                for (const key in page.forms) {
+                  if (Object.prototype.hasOwnProperty.call(page.forms, key)) {
+                    const form = page.forms[key]
+                    forms.push({
+                      ...form,
+                      header: form.header.id,
+                    })
+                  }
+                }
+
+                const ui = {
+                  grid: page.grid,
+                  header: {
+                    ...page.header.id,
+                  },
+                  dynamicTables,
+                  forms,
+                }
+                const newPagePath = `src/pages/admin/${owner}/${page.name}/${model.id}.tsx`
+                const newPageContent = `import React from 'react';
+                import { PrismaTable } from 'Components/PrismaAdmin/PrismaTable';
+                import { useRouter } from 'next/router';
+                
+                const ui = ${JSON.stringify(ui, null, 2)}
+
+                const ${model.id}: React.FC = () => {
+                  const router = useRouter();
+                  return <PrismaTable pagesPath="/admin/${owner}/${
+                  page.name
+                }/" query={router.query} push={router.push} model="${model.id}" />;
+                };
+                export default ${model.id};
+                `
+                fs.writeFileSync(
+                  newPagePath,
+                  format(newPageContent, {
+                    singleQuote: true,
+                    semi: false,
+                    trailingComma: 'all',
+                    parser: 'babel-ts',
+                  }),
+                )
+              }
+            }
+          }
+        }
+        return { success: 'ok' }
       },
     })
     t.field('createParentOwner', {
