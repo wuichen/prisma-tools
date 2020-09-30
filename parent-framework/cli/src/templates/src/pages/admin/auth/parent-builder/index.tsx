@@ -19,6 +19,7 @@ import {
   GET_SCHEMA,
   UPDATE_MODEL,
   CREATE_PARENT_ROOT,
+  GENERATE_PARENT_PAGES,
 } from 'Components/PrismaAdmin/SchemaQueries';
 import { Radio } from '@paljs/ui/Radio';
 
@@ -33,8 +34,18 @@ export default function ParentBuilder() {
   const [createParentRoot] = useMutation(CREATE_PARENT_ROOT);
   const { data, error, loading, refetch } = useQuery(GET_PARENT_ROOT);
 
+  const [generatePages] = useMutation(GENERATE_PARENT_PAGES);
+
   return (
     <div>
+      <Button
+        size="Small"
+        onClick={() => {
+          generatePages();
+        }}
+      >
+        Generate Pages
+      </Button>
       {data?.parentRoot ? (
         <div>
           <h4>Owner Types</h4>

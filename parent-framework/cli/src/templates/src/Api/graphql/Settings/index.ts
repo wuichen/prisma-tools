@@ -178,21 +178,15 @@ export const SchemaMutations = extendType({
         return rootJson
       },
     })
-    t.field('generateParentOwnerPages', {
+    t.field('generateParentPages', {
       type: GraphQLJSON,
-      args: {
-        owner: stringArg({ nullable: false }),
-      },
-      resolve: async (_, { owner }, {}) => {
-        const ownerPath = `prisma/framework/owners/${owner}.json`
-        const ownerPathExists = fs.existsSync(ownerPath)
-
-        if (!ownerPathExists) {
-          throw new Error('Please initialize the owner path first')
-        }
-
-        const ownerFile = fs.readFileSync(ownerPath)
-        const ownerJson = JSON.parse(ownerFile)
+      resolve: async (_, {}, {}) => {
+        const ownerType = adminSettings.enums.find((enumModel) => {
+          if (enumModel.name === 'OwnerType') {
+            return true
+          }
+        })
+        const owners = ownerType.fields
 
         if (!fs.existsSync('src/settings/translations')) {
           fs.mkdirSync('src/settings/translations')
@@ -224,158 +218,182 @@ export const SchemaMutations = extendType({
         for (let index = 0; index < countries.length; index++) {
           const country = countries[index]
           const translation = {}
-          for (let s = 0; s < ownerJson.models.length; s++) {
-            const model = ownerJson.models[s]
+
+          owners.map((owner) => {
+            const ownerPath = `prisma/framework/owners/${owner}.json`
+            const ownerPathExists = fs.existsSync(ownerPath)
+
+            if (!ownerPathExists) {
+              throw new Error('Please initialize the owner path first')
+            }
+
+            const ownerFile = fs.readFileSync(ownerPath)
+            const ownerJson = JSON.parse(ownerFile)
+
+            for (let s = 0; s < ownerJson.models.length; s++) {
+              const model = ownerJson.models[s]
+              if (model?.plugins?.pagesPath) {
+                const pagesPath = model.plugins.pagesPath
+                for (const key in pagesPath) {
+                  if (Object.prototype.hasOwnProperty.call(pagesPath, key) && key.length > 0) {
+                    const page = pagesPath[key]
+                    if (page.header && page.header[country.country_short]) {
+                      translation[`${owner}.${page.name}.${model.id}.createTitle`] =
+                        page.header[country.country_short].createTitle
+                      translation[`${owner}.${page.name}.${model.id}.createDescription`] =
+                        page.header[country.country_short].createDescription
+                      translation[`${owner}.${page.name}.${model.id}.updateTitle`] =
+                        page.header[country.country_short].updateTitle
+                      translation[`${owner}.${page.name}.${model.id}.updateDescription`] =
+                        page.header[country.country_short].updateDescription
+                      translation[`${owner}.${page.name}.${model.id}.listTitle`] =
+                        page.header[country.country_short].listTitle
+                      translation[`${owner}.${page.name}.${model.id}.listDescription`] =
+                        page.header[country.country_short].listDescription
+                    }
+
+                    if (page.forms) {
+                      for (const key in page.forms) {
+                        if (Object.prototype.hasOwnProperty.call(page.forms, key)) {
+                          const form = page.forms[key]
+                          if (form.header && form.header[country.country_short]) {
+                            translation[`${owner}.${page.name}.${model.id}.form.${key}.title`] =
+                              page.forms[key].header[country.country_short].title
+                            translation[`${owner}.${page.name}.${model.id}.form.${key}.description`] =
+                              page.forms[key].header[country.country_short].description
+                          }
+                        }
+                      }
+                    }
+                    if (page.dynamicTables) {
+                      for (const key in page.dynamicTables) {
+                        if (Object.prototype.hasOwnProperty.call(page.dynamicTables, key)) {
+                          const relatedModel = page.dynamicTables[key]
+                          if (relatedModel.header && relatedModel.header[country.country_short]) {
+                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.createTitle`] =
+                              relatedModel.header[country.country_short].createTitle
+                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.createDescription`] =
+                              relatedModel.header[country.country_short].createDescription
+                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateTitle`] =
+                              relatedModel.header[country.country_short].updateTitle
+                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateDescription`] =
+                              relatedModel.header[country.country_short].updateDescription
+                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.listTitle`] =
+                              relatedModel.header[country.country_short].listTitle
+                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.listDescription`] =
+                              relatedModel.header[country.country_short].listDescription
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          })
+          fs.writeFileSync(
+            `src/settings/translations/lang/${country.locale}.json`,
+            JSON.stringify(translation, null, 2),
+          )
+        }
+
+        owners.map((owner) => {
+          const ownerPath = `prisma/framework/owners/${owner}.json`
+          const ownerPathExists = fs.existsSync(ownerPath)
+
+          if (!ownerPathExists) {
+            throw new Error('Please initialize the owner path first')
+          }
+
+          const ownerFile = fs.readFileSync(ownerPath)
+          const ownerJson = JSON.parse(ownerFile)
+
+          for (let index = 0; index < ownerJson.models.length; index++) {
+            const model = ownerJson.models[index]
             if (model?.plugins?.pagesPath) {
               const pagesPath = model.plugins.pagesPath
               for (const key in pagesPath) {
                 if (Object.prototype.hasOwnProperty.call(pagesPath, key) && key.length > 0) {
                   const page = pagesPath[key]
-                  if (page.header && page.header[country.country_short]) {
-                    translation[`${owner}.${page.name}.${model.id}.createTitle`] =
-                      page.header[country.country_short].createTitle
-                    translation[`${owner}.${page.name}.${model.id}.createDescription`] =
-                      page.header[country.country_short].createDescription
-                    translation[`${owner}.${page.name}.${model.id}.updateTitle`] =
-                      page.header[country.country_short].updateTitle
-                    translation[`${owner}.${page.name}.${model.id}.updateDescription`] =
-                      page.header[country.country_short].updateDescription
-                    translation[`${owner}.${page.name}.${model.id}.listTitle`] =
-                      page.header[country.country_short].listTitle
-                    translation[`${owner}.${page.name}.${model.id}.listDescription`] =
-                      page.header[country.country_short].listDescription
+
+                  if (!fs.existsSync(`src/pages/admin/${owner}`)) {
+                    fs.mkdirSync(`src/pages/admin/${owner}`)
+                  }
+                  if (!fs.existsSync(`src/pages/admin/${owner}/${page.name}`)) {
+                    fs.mkdirSync(`src/pages/admin/${owner}/${page.name}`)
                   }
 
-                  if (page.forms) {
-                    for (const key in page.forms) {
-                      if (Object.prototype.hasOwnProperty.call(page.forms, key)) {
-                        const form = page.forms[key]
-                        if (form.header && form.header[country.country_short]) {
-                          translation[`${owner}.${page.name}.${model.id}.form.${key}.title`] =
-                            page.forms[key].header[country.country_short].title
-                          translation[`${owner}.${page.name}.${model.id}.form.${key}.description`] =
-                            page.forms[key].header[country.country_short].description
+                  let dynamicTables = JSON.parse(JSON.stringify(page.dynamicTables))
+
+                  // Generate Pages
+                  for (const key in dynamicTables) {
+                    if (Object.prototype.hasOwnProperty.call(dynamicTables, key)) {
+                      let model = dynamicTables[key]
+                      if (model.header && model.header.id) {
+                        model.header = model.header.id
+                      }
+                      const formArray = []
+                      for (const key in model.forms) {
+                        if (Object.prototype.hasOwnProperty.call(model.forms, key)) {
+                          const form = model.forms[key]
+                          formArray.push({
+                            ...form,
+                            header: form.header.id,
+                          })
                         }
                       }
+                      model.forms = formArray
                     }
                   }
-                  if (page.dynamicTables) {
-                    for (const key in page.dynamicTables) {
-                      if (Object.prototype.hasOwnProperty.call(page.dynamicTables, key)) {
-                        const relatedModel = page.dynamicTables[key]
-                        if (relatedModel.header && relatedModel.header[country.country_short]) {
-                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.createTitle`] =
-                            relatedModel.header[country.country_short].createTitle
-                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.createDescription`] =
-                            relatedModel.header[country.country_short].createDescription
-                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateTitle`] =
-                            relatedModel.header[country.country_short].updateTitle
-                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateDescription`] =
-                            relatedModel.header[country.country_short].updateDescription
-                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.listTitle`] =
-                            relatedModel.header[country.country_short].listTitle
-                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.listDescription`] =
-                            relatedModel.header[country.country_short].listDescription
-                        }
-                      }
+                  const forms = []
+
+                  for (const key in page.forms) {
+                    if (Object.prototype.hasOwnProperty.call(page.forms, key)) {
+                      const form = page.forms[key]
+                      forms.push({
+                        ...form,
+                        header: form.header.id,
+                      })
                     }
                   }
+
+                  const ui = {
+                    grid: page.grid,
+                    header: {
+                      ...page.header.id,
+                    },
+                    dynamicTables,
+                    forms,
+                  }
+                  const newPagePath = `src/pages/admin/${owner}/${page.name}/${model.id}.tsx`
+                  const newPageContent = `import React from 'react';
+                  import { PrismaTable } from 'Components/PrismaAdmin/PrismaTable';
+                  import { useRouter } from 'next/router';
+                  
+                  const ui = ${JSON.stringify(ui, null, 2)}
+  
+                  const ${model.id}: React.FC = () => {
+                    const router = useRouter();
+                    return <PrismaTable pagesPath="/admin/${owner}/${
+                    page.name
+                  }/" query={router.query} push={router.push} model="${model.id}" />;
+                  };
+                  export default ${model.id};
+                  `
+                  fs.writeFileSync(
+                    newPagePath,
+                    format(newPageContent, {
+                      singleQuote: true,
+                      semi: false,
+                      trailingComma: 'all',
+                      parser: 'babel-ts',
+                    }),
+                  )
                 }
               }
             }
-
-            fs.writeFileSync(
-              `src/settings/translations/lang/${country.locale}.json`,
-              JSON.stringify(translation, null, 2),
-            )
           }
-        }
-
-        for (let index = 0; index < ownerJson.models.length; index++) {
-          const model = ownerJson.models[index]
-          if (model?.plugins?.pagesPath) {
-            const pagesPath = model.plugins.pagesPath
-            for (const key in pagesPath) {
-              if (Object.prototype.hasOwnProperty.call(pagesPath, key) && key.length > 0) {
-                const page = pagesPath[key]
-
-                if (!fs.existsSync(`src/pages/admin/${owner}`)) {
-                  fs.mkdirSync(`src/pages/admin/${owner}`)
-                }
-                if (!fs.existsSync(`src/pages/admin/${owner}/${page.name}`)) {
-                  fs.mkdirSync(`src/pages/admin/${owner}/${page.name}`)
-                }
-
-                let dynamicTables = JSON.parse(JSON.stringify(page.dynamicTables))
-
-                // Generate Pages
-                for (const key in dynamicTables) {
-                  if (Object.prototype.hasOwnProperty.call(dynamicTables, key)) {
-                    let model = dynamicTables[key]
-                    if (model.header && model.header.id) {
-                      model.header = model.header.id
-                    }
-                    const formArray = []
-                    for (const key in model.forms) {
-                      if (Object.prototype.hasOwnProperty.call(model.forms, key)) {
-                        const form = model.forms[key]
-                        formArray.push({
-                          ...form,
-                          header: form.header.id,
-                        })
-                      }
-                    }
-                    model.forms = formArray
-                  }
-                }
-                const forms = []
-
-                for (const key in page.forms) {
-                  if (Object.prototype.hasOwnProperty.call(page.forms, key)) {
-                    const form = page.forms[key]
-                    forms.push({
-                      ...form,
-                      header: form.header.id,
-                    })
-                  }
-                }
-
-                const ui = {
-                  grid: page.grid,
-                  header: {
-                    ...page.header.id,
-                  },
-                  dynamicTables,
-                  forms,
-                }
-                const newPagePath = `src/pages/admin/${owner}/${page.name}/${model.id}.tsx`
-                const newPageContent = `import React from 'react';
-                import { PrismaTable } from 'Components/PrismaAdmin/PrismaTable';
-                import { useRouter } from 'next/router';
-                
-                const ui = ${JSON.stringify(ui, null, 2)}
-
-                const ${model.id}: React.FC = () => {
-                  const router = useRouter();
-                  return <PrismaTable pagesPath="/admin/${owner}/${
-                  page.name
-                }/" query={router.query} push={router.push} model="${model.id}" />;
-                };
-                export default ${model.id};
-                `
-                fs.writeFileSync(
-                  newPagePath,
-                  format(newPageContent, {
-                    singleQuote: true,
-                    semi: false,
-                    trailingComma: 'all',
-                    parser: 'babel-ts',
-                  }),
-                )
-              }
-            }
-          }
-        }
+        })
         return { success: 'ok' }
       },
     })

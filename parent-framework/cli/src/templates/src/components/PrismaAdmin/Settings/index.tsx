@@ -18,7 +18,11 @@ import { useMutation, useQuery } from '@apollo/client';
 import { GET_SCHEMA, UPDATE_MODEL } from '../SchemaQueries';
 import { ContextProps, SchemaModel } from '../types';
 
-export const Settings: React.FC = ({ role, modelExtraSettings }) => {
+export const Settings: React.FC = ({
+  role,
+  modelExtraSettings,
+  fieldExtraSettings,
+}) => {
   const { data } = useQuery<{ getSchema: ContextProps['schema'] }>(GET_SCHEMA, {
     variables: { role },
     skip: !role,
@@ -61,6 +65,7 @@ export const Settings: React.FC = ({ role, modelExtraSettings }) => {
     }
   };
   const ModelExtraSettings = modelExtraSettings;
+  const FieldExtraSettings = fieldExtraSettings;
 
   return (
     <Row>
@@ -156,6 +161,14 @@ export const Settings: React.FC = ({ role, modelExtraSettings }) => {
                                   field={field}
                                   model={currentModel?.id}
                                 />
+                                {FieldExtraSettings && currentModel && (
+                                  <FieldExtraSettings
+                                    role={role}
+                                    models={models}
+                                    modelObject={currentModel}
+                                    field={field}
+                                  />
+                                )}
                               </AccordionItem>
                             </StyledDragItem>
                           )}
