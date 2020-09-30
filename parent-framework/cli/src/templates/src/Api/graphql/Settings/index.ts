@@ -5,6 +5,8 @@ import fs from 'fs'
 import path from 'path'
 import adminSettings from '../../../../prisma/adminSettings'
 import { GraphQLJSON } from 'graphql-type-json'
+import countries from '../../../settings/countries'
+
 const { format, Options: PrettierOptions } = require('prettier')
 
 export const SchemaQueries = extendType({
@@ -192,6 +194,103 @@ export const SchemaMutations = extendType({
         const ownerFile = fs.readFileSync(ownerPath)
         const ownerJson = JSON.parse(ownerFile)
 
+        if (!fs.existsSync('src/settings/translations')) {
+          fs.mkdirSync('src/settings/translations')
+        }
+        if (!fs.existsSync('src/settings/translations/lang')) {
+          fs.mkdirSync('src/settings/translations/lang')
+        }
+
+        const messagesFile = `${countries
+          .map((country) => {
+            return `import ${country.locale} from './lang/${country.locale}.json';\n`
+          })
+          .join('')}export const messages = {${countries
+          .map((country) => {
+            return `${country.locale},`
+          })
+          .join('')}}`
+
+        fs.writeFileSync(
+          'src/settings/translations/messages.ts',
+          format(messagesFile, {
+            singleQuote: true,
+            semi: false,
+            trailingComma: 'all',
+            parser: 'babel-ts',
+          }),
+        )
+        // Generate Translation Files
+        for (let index = 0; index < countries.length; index++) {
+          const country = countries[index]
+          const translation = {}
+          for (let s = 0; s < ownerJson.models.length; s++) {
+            const model = ownerJson.models[s]
+            if (model?.plugins?.pagesPath) {
+              const pagesPath = model.plugins.pagesPath
+              for (const key in pagesPath) {
+                if (Object.prototype.hasOwnProperty.call(pagesPath, key) && key.length > 0) {
+                  const page = pagesPath[key]
+                  if (page.header && page.header[country.country_short]) {
+                    translation[`${owner}.${page.name}.${model.id}.createTitle`] =
+                      page.header[country.country_short].createTitle
+                    translation[`${owner}.${page.name}.${model.id}.createDescription`] =
+                      page.header[country.country_short].createDescription
+                    translation[`${owner}.${page.name}.${model.id}.updateTitle`] =
+                      page.header[country.country_short].updateTitle
+                    translation[`${owner}.${page.name}.${model.id}.updateDescription`] =
+                      page.header[country.country_short].updateDescription
+                    translation[`${owner}.${page.name}.${model.id}.listTitle`] =
+                      page.header[country.country_short].listTitle
+                    translation[`${owner}.${page.name}.${model.id}.listDescription`] =
+                      page.header[country.country_short].listDescription
+                  }
+
+                  if (page.forms) {
+                    for (const key in page.forms) {
+                      if (Object.prototype.hasOwnProperty.call(page.forms, key)) {
+                        const form = page.forms[key]
+                        if (form.header && form.header[country.country_short]) {
+                          translation[`${owner}.${page.name}.${model.id}.form.${key}.title`] =
+                            page.forms[key].header[country.country_short].title
+                          translation[`${owner}.${page.name}.${model.id}.form.${key}.description`] =
+                            page.forms[key].header[country.country_short].description
+                        }
+                      }
+                    }
+                  }
+                  if (page.dynamicTables) {
+                    for (const key in page.dynamicTables) {
+                      if (Object.prototype.hasOwnProperty.call(page.dynamicTables, key)) {
+                        const relatedModel = page.dynamicTables[key]
+                        if (relatedModel.header && relatedModel.header[country.country_short]) {
+                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.createTitle`] =
+                            relatedModel.header[country.country_short].createTitle
+                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.createDescription`] =
+                            relatedModel.header[country.country_short].createDescription
+                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateTitle`] =
+                            relatedModel.header[country.country_short].updateTitle
+                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateDescription`] =
+                            relatedModel.header[country.country_short].updateDescription
+                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.listTitle`] =
+                            relatedModel.header[country.country_short].listTitle
+                          translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.listDescription`] =
+                            relatedModel.header[country.country_short].listDescription
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            fs.writeFileSync(
+              `src/settings/translations/lang/${country.locale}.json`,
+              JSON.stringify(translation, null, 2),
+            )
+          }
+        }
+
         for (let index = 0; index < ownerJson.models.length; index++) {
           const model = ownerJson.models[index]
           if (model?.plugins?.pagesPath) {
@@ -209,6 +308,7 @@ export const SchemaMutations = extendType({
 
                 let dynamicTables = JSON.parse(JSON.stringify(page.dynamicTables))
 
+                // Generate Pages
                 for (const key in dynamicTables) {
                   if (Object.prototype.hasOwnProperty.call(dynamicTables, key)) {
                     let model = dynamicTables[key]
