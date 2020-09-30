@@ -73,7 +73,7 @@ export const SchemaQueries = extendType({
       args: {},
       resolve: async (_, {}, {}) => {
         const parentRootPath = 'prisma/framework/root.json'
-        if (!fs.existsSync) {
+        if (!fs.existsSync(parentRootPath)) {
           return null
         }
         const rootFile = fs.readFileSync(parentRootPath)
@@ -122,7 +122,14 @@ export const SchemaMutations = extendType({
               },
             }
             const displayFields = []
+            let intl = {}
+
+            countries.map((country) => {
+              intl[country.country_short] = model.name
+            })
+
             const plugins = {
+              intl,
               pagesPath: {},
               hooks,
               active: {},
@@ -149,12 +156,18 @@ export const SchemaMutations = extendType({
               const create = field.name.includes('Id') ? false : field.create
               const update = field.name.includes('Id') ? false : field.update
               const read = field.name.includes('Id') ? false : field.read
-
+              const fieldIntl = {}
+              countries.map((country) => {
+                fieldIntl[country.country_short] = field.title
+              })
               return {
                 ...field,
                 create,
                 update,
                 read,
+                plugins: {
+                  intl: fieldIntl,
+                },
               }
             })
 
@@ -181,13 +194,26 @@ export const SchemaMutations = extendType({
     t.field('generateParentPages', {
       type: GraphQLJSON,
       resolve: async (_, {}, {}) => {
+        // Check root.json exist
+        const rootPath = 'prisma/framework/root.json'
+        if (!fs.existsSync(rootPath)) {
+          throw new Error('Please initiate root.json first')
+        }
+        const rootFile = fs.readFileSync(rootPath)
+        let rootJson = JSON.parse(rootFile)
+
+        // Check if OwnerType declared in schema
         const ownerType = adminSettings.enums.find((enumModel) => {
           if (enumModel.name === 'OwnerType') {
             return true
           }
         })
+        if (!ownerType) {
+          throw new Error('Please add OwnerType in your prisma schema')
+        }
         const owners = ownerType.fields
 
+        // Check if translation folders created
         if (!fs.existsSync('src/settings/translations')) {
           fs.mkdirSync('src/settings/translations')
         }
@@ -214,17 +240,27 @@ export const SchemaMutations = extendType({
             parser: 'babel-ts',
           }),
         )
+
         // Generate Translation Files
         for (let index = 0; index < countries.length; index++) {
           const country = countries[index]
           const translation = {}
+
+          rootJson.models.map((rootModel) => {
+            if (rootModel?.plugins?.intl) {
+              translation[`Admin.${rootModel.id}`] = rootModel.plugins.intl[country.country_short]
+            }
+            rootModel.fields.map((rootModelField) => {
+              translation[`Admin.${rootModelField.id}`] = rootModelField.plugins.intl[country.country_short]
+            })
+          })
 
           owners.map((owner) => {
             const ownerPath = `prisma/framework/owners/${owner}.json`
             const ownerPathExists = fs.existsSync(ownerPath)
 
             if (!ownerPathExists) {
-              throw new Error('Please initialize the owner path first')
+              return null
             }
 
             const ownerFile = fs.readFileSync(ownerPath)
@@ -238,17 +274,17 @@ export const SchemaMutations = extendType({
                   if (Object.prototype.hasOwnProperty.call(pagesPath, key) && key.length > 0) {
                     const page = pagesPath[key]
                     if (page.header && page.header[country.country_short]) {
-                      translation[`${owner}.${page.name}.${model.id}.createTitle`] =
+                      translation[`Admin.${owner}.${page.name}.${model.id}.createTitle`] =
                         page.header[country.country_short].createTitle
-                      translation[`${owner}.${page.name}.${model.id}.createDescription`] =
+                      translation[`Admin.${owner}.${page.name}.${model.id}.createDescription`] =
                         page.header[country.country_short].createDescription
-                      translation[`${owner}.${page.name}.${model.id}.updateTitle`] =
+                      translation[`Admin.${owner}.${page.name}.${model.id}.updateTitle`] =
                         page.header[country.country_short].updateTitle
-                      translation[`${owner}.${page.name}.${model.id}.updateDescription`] =
+                      translation[`Admin.${owner}.${page.name}.${model.id}.updateDescription`] =
                         page.header[country.country_short].updateDescription
-                      translation[`${owner}.${page.name}.${model.id}.listTitle`] =
+                      translation[`Admin.${owner}.${page.name}.${model.id}.listTitle`] =
                         page.header[country.country_short].listTitle
-                      translation[`${owner}.${page.name}.${model.id}.listDescription`] =
+                      translation[`Admin.${owner}.${page.name}.${model.id}.listDescription`] =
                         page.header[country.country_short].listDescription
                     }
 
@@ -257,9 +293,9 @@ export const SchemaMutations = extendType({
                         if (Object.prototype.hasOwnProperty.call(page.forms, key)) {
                           const form = page.forms[key]
                           if (form.header && form.header[country.country_short]) {
-                            translation[`${owner}.${page.name}.${model.id}.form.${key}.title`] =
+                            translation[`Admin.${owner}.${page.name}.${model.id}.form.${key}.title`] =
                               page.forms[key].header[country.country_short].title
-                            translation[`${owner}.${page.name}.${model.id}.form.${key}.description`] =
+                            translation[`Admin.${owner}.${page.name}.${model.id}.form.${key}.description`] =
                               page.forms[key].header[country.country_short].description
                           }
                         }
@@ -270,17 +306,19 @@ export const SchemaMutations = extendType({
                         if (Object.prototype.hasOwnProperty.call(page.dynamicTables, key)) {
                           const relatedModel = page.dynamicTables[key]
                           if (relatedModel.header && relatedModel.header[country.country_short]) {
-                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.createTitle`] =
+                            translation[`Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.createTitle`] =
                               relatedModel.header[country.country_short].createTitle
-                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.createDescription`] =
-                              relatedModel.header[country.country_short].createDescription
-                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateTitle`] =
+                            translation[
+                              `Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.createDescription`
+                            ] = relatedModel.header[country.country_short].createDescription
+                            translation[`Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateTitle`] =
                               relatedModel.header[country.country_short].updateTitle
-                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateDescription`] =
-                              relatedModel.header[country.country_short].updateDescription
-                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.listTitle`] =
+                            translation[
+                              `Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateDescription`
+                            ] = relatedModel.header[country.country_short].updateDescription
+                            translation[`Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.listTitle`] =
                               relatedModel.header[country.country_short].listTitle
-                            translation[`${owner}.${page.name}.${model.id}.dynamicTable.${key}.listDescription`] =
+                            translation[`Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.listDescription`] =
                               relatedModel.header[country.country_short].listDescription
                           }
                         }
@@ -302,7 +340,7 @@ export const SchemaMutations = extendType({
           const ownerPathExists = fs.existsSync(ownerPath)
 
           if (!ownerPathExists) {
-            throw new Error('Please initialize the owner path first')
+            return null
           }
 
           const ownerFile = fs.readFileSync(ownerPath)

@@ -18,10 +18,12 @@ import {
   GET_PARENT_ROOT,
   GET_SCHEMA,
   UPDATE_MODEL,
+  UPDATE_FIELD,
   CREATE_PARENT_ROOT,
   GENERATE_PARENT_PAGES,
 } from 'Components/PrismaAdmin/SchemaQueries';
 import { Radio } from '@paljs/ui/Radio';
+import countries from 'settings/countries';
 
 const Input = styled(InputGroup)`
   margin-bottom: 10px;
@@ -38,16 +40,16 @@ export default function ParentBuilder() {
 
   return (
     <div>
-      <Button
-        size="Small"
-        onClick={() => {
-          generatePages();
-        }}
-      >
-        Generate Pages
-      </Button>
       {data?.parentRoot ? (
         <div>
+          <Button
+            size="Small"
+            onClick={() => {
+              generatePages();
+            }}
+          >
+            Generate Pages
+          </Button>
           <h4>Owner Types</h4>
           <Row>
             {ownerType?.fields?.map((field, index) => {
@@ -64,6 +66,7 @@ export default function ParentBuilder() {
           </Row>
           <Settings
             modelExtraSettings={ExtraRootModelSettings}
+            fieldExtraSettings={ExtraRootFieldSettings}
             role={`prisma/framework/root.json`}
           />
         </div>
@@ -83,11 +86,77 @@ export default function ParentBuilder() {
   );
 }
 
+const ExtraRootFieldSettings = ({ modelObject: model, role, field }) => {
+  const [updateField] = useMutation(UPDATE_FIELD);
+  const tabs = countries.map((country) => {
+    return {
+      title: country.country_long,
+      code: country.country_short,
+    };
+  });
+  const [currentPlugins, setCurrentPlugins] = useState(field.plugins);
+  return (
+    <>
+      <Tabs>
+        {tabs.map((tab, index) => {
+          const intlValue = currentPlugins.intl[tab.code] || field.name;
+          const intlValueOnChange = (e) => {
+            setCurrentPlugins({
+              ...field.plugins,
+              intl: {
+                ...field.plugins.intl,
+                [tab.code]: e.target.value,
+              },
+            });
+          };
+          return (
+            <Tab title={tab.title}>
+              <p>Localized Text</p>
+              <Input>
+                <input
+                  value={intlValue}
+                  onChange={intlValueOnChange}
+                  type="text"
+                  placeholder={field.title}
+                />
+              </Input>
+            </Tab>
+          );
+        })}
+      </Tabs>
+      <Button
+        onClick={() => {
+          updateField({
+            variables: {
+              id: field.id,
+              modelId: model.id,
+              data: {
+                plugins: currentPlugins,
+              },
+              role,
+            },
+          });
+        }}
+      >
+        Save Localization
+      </Button>
+    </>
+  );
+};
+
 const ExtraRootModelSettings = ({ modelObject: model, role }) => {
   const [updateModel] = useMutation(UPDATE_MODEL);
+  const tabs = countries.map((country) => {
+    return {
+      title: country.country_long,
+      code: country.country_short,
+    };
+  });
+  const [currentPlugins, setCurrentPlugins] = useState(model.plugins);
 
   return (
     <div>
+      <h6>Model Type</h6>
       <Radio
         name="radio"
         onChange={(value) => {
@@ -122,6 +191,49 @@ const ExtraRootModelSettings = ({ modelObject: model, role }) => {
           },
         ]}
       />
+      <br />
+      <Tabs>
+        {tabs.map((tab, index) => {
+          const intlValue = currentPlugins.intl[tab.code] || model.name;
+          const intlValueOnChange = (e) => {
+            setCurrentPlugins({
+              ...model.plugins,
+              intl: {
+                ...model.plugins.intl,
+                [tab.code]: e.target.value,
+              },
+            });
+          };
+          return (
+            <Tab title={tab.title}>
+              <p>Localized Text</p>
+              <Input>
+                <input
+                  value={intlValue}
+                  onChange={intlValueOnChange}
+                  type="text"
+                  placeholder={model.name}
+                />
+              </Input>
+            </Tab>
+          );
+        })}
+      </Tabs>
+      <Button
+        onClick={() => {
+          updateModel({
+            variables: {
+              id: model.id,
+              data: {
+                plugins: currentPlugins,
+              },
+              role,
+            },
+          });
+        }}
+      >
+        Save Localization
+      </Button>
     </div>
   );
 };
