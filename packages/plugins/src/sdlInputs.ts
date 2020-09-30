@@ -3,6 +3,36 @@ import gql from 'graphql-tag';
 import { GraphQLSchema, printSchema } from 'graphql';
 import { writeFileSync } from 'fs';
 
+const testedTypes: string[] = [];
+
+export const hasEmptyTypeFields = (type: string) => {
+  testedTypes.push(type);
+  const inputType = schema.inputTypes.find((item) => item.name === type);
+  if (inputType) {
+    if (inputType.fields.length === 0) return true;
+    for (const field of inputType.fields) {
+      const fieldType = getInputType(field);
+      if (
+        fieldType.type !== type &&
+        fieldType.kind === 'object' &&
+        !testedTypes.includes(fieldType.type as string)
+      ) {
+        const state = hasEmptyTypeFields(fieldType.type as string);
+        if (state) return true;
+      }
+    }
+  }
+  return false;
+};
+
+export const getInputType = (field: DMMF.SchemaArg) => {
+  let index: number = 0;
+  if (field.inputTypes.length > 1 && field.inputTypes[1].kind === 'object') {
+    index = 1;
+  }
+  return field.inputTypes[index];
+};
+
 function createInput() {
   let fileContent = `
   scalar DateTime
@@ -23,27 +53,25 @@ function createInput() {
   });
 
   schema.inputTypes.forEach((model) => {
-    fileContent += `input ${model.name} {
+    if (model.fields.length > 0) {
+      fileContent += `input ${model.name} {
     `;
-    model.fields.forEach((field) => {
-      let inputType: DMMF.SchemaArgInputType;
-      if (
-        field.inputType.length > 1 &&
-        field.inputType[1].type !== 'null' &&
-        field.name !== 'not'
-      ) {
-        inputType = field.inputType[1];
-      } else {
-        inputType = field.inputType[0];
-      }
-      fileContent += `${field.name}: ${
-        inputType.isList ? `[${inputType.type}!]` : inputType.type
-      }${inputType.isRequired ? '!' : ''}
+      model.fields.forEach((field) => {
+        const inputType = getInputType(field);
+        const hasEmptyType =
+          inputType.kind === 'object' &&
+          hasEmptyTypeFields(inputType.type as string);
+        if (!hasEmptyType) {
+          fileContent += `${field.name}: ${
+            inputType.isList ? `[${inputType.type}!]` : inputType.type
+          }${field.isRequired ? '!' : ''}
       `;
-    });
-    fileContent += `}
+        }
+      });
+      fileContent += `}
   
 `;
+    }
   });
 
   schema.outputTypes
@@ -56,7 +84,7 @@ function createInput() {
           field.outputType.isList
             ? `[${field.outputType.type}!]`
             : field.outputType.type
-        }${field.outputType.isRequired ? '!' : ''}
+        }${field.isRequired ? '!' : ''}
       `;
       });
       fileContent += `}
@@ -66,7 +94,7 @@ function createInput() {
   return fileContent;
 }
 
-export const sdlInputs = gql`
+export const sdlInputs = () => gql`
   ${createInput()}
 `;
 

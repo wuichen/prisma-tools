@@ -57,6 +57,21 @@ export const Table: React.FC<TableProps> = ({
   } = useContext(TableContext);
   const model = models.find((item) => item.id === modelName);
   const columnList = columns(model, tableColumns);
+  const tableInstance = useTable(
+    {
+      columns: columnList,
+      data,
+      initialState: { pageIndex: 0, filters: initialFilter }, // Pass our hoisted table state
+      manualFilters: true,
+      manualSortBy: true,
+      manualPagination: true,
+      pageCount: controlledPageCount,
+    } as any,
+    useFilters,
+    useSortBy,
+    usePagination,
+  );
+
   const {
     getTableProps,
     getTableBodyProps,
@@ -72,20 +87,8 @@ export const Table: React.FC<TableProps> = ({
     setPageSize,
     setAllFilters,
     state: { pageIndex, pageSize, filters, sortBy },
-  } = useTable(
-    {
-      columns: columnList,
-      data,
-      initialState: { pageIndex: 0, filters: initialFilter }, // Pass our hoisted table state
-      manualFilters: true,
-      manualSortBy: true,
-      manualPagination: true,
-      pageCount: controlledPageCount,
-    },
-    useFilters,
-    useSortBy,
-    usePagination,
-  );
+  } = tableInstance as any;
+
   const tableRef = useRef<HTMLTableElement>(null);
   const [columnSize, setColumnSize] = useState(1);
   const [selected, setSelected] = useState<number[]>([]);
@@ -353,9 +356,6 @@ export const Table: React.FC<TableProps> = ({
                         </Button>
                       </Tooltip>
                     </td>
-                  )}
-                  {actions.create && !actions.update && !actions.delete && (
-                    <td colSpan={2} />
                   )}
                   {parent && model && fieldUpdate && (
                     <ListConnect parent={parent} row={row} model={model} />

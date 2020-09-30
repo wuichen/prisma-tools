@@ -36,7 +36,7 @@ export class GenerateSdl extends Generators {
           if (field.args.length > 0) {
             fileContent += '(';
             field.args.forEach((arg) => {
-              fileContent += `${arg.name}: ${arg.inputType[0].type}
+              fileContent += `${arg.name}: ${arg.inputTypes[0].type}
               `;
             });
             fileContent += ')';
@@ -44,7 +44,7 @@ export class GenerateSdl extends Generators {
           fileContent += `: ${
             field.outputType.isList
               ? `[${field.outputType.type}!]!`
-              : field.outputType.type + (field.outputType.isRequired ? '!' : '')
+              : field.outputType.type + (field.isRequired ? '!' : '')
           }`;
         }
       });
@@ -190,10 +190,10 @@ const defaultTypeFile = (isJs?: boolean) =>
     ? `const { mergeTypeDefs } = require('@graphql-tools/merge');
 const { sdlInputs } = require('@paljs/plugins');
 
-const typeDefs = mergeTypeDefs([sdlInputs]);
+const typeDefs = mergeTypeDefs([sdlInputs()]);
 
 module.exports = {typeDefs};`
     : `import { mergeTypeDefs } from '@graphql-tools/merge';
 import { sdlInputs } from '@paljs/plugins';
 
-export default mergeTypeDefs([sdlInputs]);`;
+export default mergeTypeDefs([sdlInputs()]);`;

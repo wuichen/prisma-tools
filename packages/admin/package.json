@@ -1,6 +1,6 @@
 {
   "name": "@paljs/admin",
-  "version": "1.5.1",
+  "version": "2.0.1",
   "main": "dist/index.js",
   "module": "dist/admin.esm.js",
   "types": "dist/index.d.ts",
@@ -15,13 +15,13 @@
   "private": false,
   "scripts": {
     "start": "tsdx watch",
-    "build": "tsdx build  --transpileOnly",
+    "build": "tsdx build",
     "test": "tsdx test",
     "lint": "tsdx lint",
     "prepare": "yarn build"
   },
   "dependencies": {
-    "@paljs/types": "^1.4.0",
+    "@paljs/types": "^2.0.0",
     "moment": "2.26.0",
     "prettier": "2.0.5",
     "query-string": "6.13.1",
