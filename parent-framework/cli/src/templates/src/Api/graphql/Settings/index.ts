@@ -125,7 +125,7 @@ export const SchemaMutations = extendType({
             let intl = {}
 
             countries.map((country) => {
-              intl[country.country_short] = model.name
+              intl[country.locale] = model.name
             })
 
             const plugins = {
@@ -158,7 +158,7 @@ export const SchemaMutations = extendType({
               const read = field.name.includes('Id') ? false : field.read
               const fieldIntl = {}
               countries.map((country) => {
-                fieldIntl[country.country_short] = field.title
+                fieldIntl[country.locale] = field.title
               })
               return {
                 ...field,
@@ -248,10 +248,10 @@ export const SchemaMutations = extendType({
 
           rootJson.models.map((rootModel) => {
             if (rootModel?.plugins?.intl) {
-              translation[`Admin.${rootModel.id}`] = rootModel.plugins.intl[country.country_short]
+              translation[`Admin.${rootModel.id}`] = rootModel.plugins.intl[country.locale]
             }
             rootModel.fields.map((rootModelField) => {
-              translation[`Admin.${rootModelField.id}`] = rootModelField.plugins.intl[country.country_short]
+              translation[`Admin.${rootModelField.id}`] = rootModelField.plugins.intl[country.locale]
             })
           })
 
@@ -273,30 +273,30 @@ export const SchemaMutations = extendType({
                 for (const key in pagesPath) {
                   if (Object.prototype.hasOwnProperty.call(pagesPath, key) && key.length > 0) {
                     const page = pagesPath[key]
-                    if (page.header && page.header[country.country_short]) {
+                    if (page.header && page.header[country.locale]) {
                       translation[`Admin.${owner}.${page.name}.${model.id}.createTitle`] =
-                        page.header[country.country_short].createTitle
+                        page.header[country.locale].createTitle
                       translation[`Admin.${owner}.${page.name}.${model.id}.createDescription`] =
-                        page.header[country.country_short].createDescription
+                        page.header[country.locale].createDescription
                       translation[`Admin.${owner}.${page.name}.${model.id}.updateTitle`] =
-                        page.header[country.country_short].updateTitle
+                        page.header[country.locale].updateTitle
                       translation[`Admin.${owner}.${page.name}.${model.id}.updateDescription`] =
-                        page.header[country.country_short].updateDescription
+                        page.header[country.locale].updateDescription
                       translation[`Admin.${owner}.${page.name}.${model.id}.listTitle`] =
-                        page.header[country.country_short].listTitle
+                        page.header[country.locale].listTitle
                       translation[`Admin.${owner}.${page.name}.${model.id}.listDescription`] =
-                        page.header[country.country_short].listDescription
+                        page.header[country.locale].listDescription
                     }
 
                     if (page.forms) {
                       for (const key in page.forms) {
                         if (Object.prototype.hasOwnProperty.call(page.forms, key)) {
                           const form = page.forms[key]
-                          if (form.header && form.header[country.country_short]) {
+                          if (form.header && form.header[country.locale]) {
                             translation[`Admin.${owner}.${page.name}.${model.id}.form.${key}.title`] =
-                              page.forms[key].header[country.country_short].title
+                              page.forms[key].header[country.locale].title
                             translation[`Admin.${owner}.${page.name}.${model.id}.form.${key}.description`] =
-                              page.forms[key].header[country.country_short].description
+                              page.forms[key].header[country.locale].description
                           }
                         }
                       }
@@ -305,21 +305,21 @@ export const SchemaMutations = extendType({
                       for (const key in page.dynamicTables) {
                         if (Object.prototype.hasOwnProperty.call(page.dynamicTables, key)) {
                           const relatedModel = page.dynamicTables[key]
-                          if (relatedModel.header && relatedModel.header[country.country_short]) {
+                          if (relatedModel.header && relatedModel.header[country.locale]) {
                             translation[`Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.createTitle`] =
-                              relatedModel.header[country.country_short].createTitle
+                              relatedModel.header[country.locale].createTitle
                             translation[
                               `Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.createDescription`
-                            ] = relatedModel.header[country.country_short].createDescription
+                            ] = relatedModel.header[country.locale].createDescription
                             translation[`Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateTitle`] =
-                              relatedModel.header[country.country_short].updateTitle
+                              relatedModel.header[country.locale].updateTitle
                             translation[
                               `Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.updateDescription`
-                            ] = relatedModel.header[country.country_short].updateDescription
+                            ] = relatedModel.header[country.locale].updateDescription
                             translation[`Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.listTitle`] =
-                              relatedModel.header[country.country_short].listTitle
+                              relatedModel.header[country.locale].listTitle
                             translation[`Admin.${owner}.${page.name}.${model.id}.dynamicTable.${key}.listDescription`] =
-                              relatedModel.header[country.country_short].listDescription
+                              relatedModel.header[country.locale].listDescription
                           }
                         }
                       }
@@ -412,7 +412,7 @@ export const SchemaMutations = extendType({
   
                   const ${model.id}: React.FC = () => {
                     const router = useRouter();
-                    return <PrismaTable pagesPath="/admin/${owner}/${
+                    return <PrismaTable ui={ui} pagesPath="/admin/${owner}/${
                     page.name
                   }/" query={router.query} push={router.push} model="${model.id}" />;
                   };

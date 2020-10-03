@@ -136,6 +136,8 @@ const updatePackageJson = () =>
         '@paljs/cli': '^1.5.1',
         'jwt-decode': '^3.0.0-beta.2',
         'graphql-type-json': '^0.3.2',
+        'react-intl': '^5.4.6',
+        'js-cookie': '^2.2.1',
         lowdb: '^1.0.0',
       };
       fs.writeFileSync(
@@ -158,7 +160,7 @@ const updatePalConfig = () =>
       const overridePalJsConfig = `
       const pageContent = \`
       import React from 'react';
-      import PrismaTable from 'components/PrismaAdmin';
+      import PrismaTable from 'Components/PrismaAdmin';
       const #{id}: React.FC = () => {
         return <PrismaTable model="#{id}" />;
       };
@@ -392,6 +394,14 @@ const addCustomElements = () => {
       await ncp(parentBuilderSource, parentBuilderDestination);
       console.log(chalk.green('Successfully added parentbuilder'));
 
+      const appSource = path.join(__dirname, '../templates/src/pages/_app.tsx');
+      const appDestination = path.join(
+        __dirname,
+        '../../../example/src/pages/_app.tsx',
+      );
+      await ncp(appSource, appDestination);
+      console.log(chalk.green('Successfully added _app.tsx'));
+
       const prismaAdminSettingsSource = path.join(
         __dirname,
         '../templates/src/Components/PrismaAdmin/Settings',
@@ -422,10 +432,69 @@ const addCustomElements = () => {
       await ncp(settingsSource, settingsDestination);
       console.log(chalk.green('Successfully added Settings'));
 
+      const contextsSource = path.join(__dirname, '../templates/src/contexts');
+      const contextsDestination = path.join(
+        __dirname,
+        '../../../example/src/contexts',
+      );
+      await ncp(contextsSource, contextsDestination);
+      console.log(chalk.green('Successfully added Settings'));
+
+      const layoutsSource = path.join(__dirname, '../templates/src/Layouts');
+      const layoutsDestination = path.join(
+        __dirname,
+        '../../../example/src/Layouts',
+      );
+      await ncp(layoutsSource, layoutsDestination);
+      console.log(chalk.green('Successfully added parentbuilder'));
+
       resolve();
     }, 500);
   });
 };
+
+const updatePrismaTable = () =>
+  new Promise((resolve, reject) => {
+    setTimeout(async () => {
+      const prismaTableLocation = path.join(
+        __dirname,
+        '../../../example/src/Components/PrismaAdmin/PrismaTable/index.tsx',
+      );
+      const prismaTableBuffer = fs.readFileSync(prismaTableLocation);
+      let prismaTableString = prismaTableBuffer.toString();
+
+      // add ui prop to PrismaTable
+      const dynamicTableOld = '<DynamicTable';
+      const dynamicTableNew = '<DynamicTable ui={props.ui} ';
+      if (prismaTableString.includes(dynamicTableOld)) {
+        prismaTableString = prismaTableString.replace(
+          dynamicTableOld,
+          dynamicTableNew,
+        );
+        console.log(
+          chalk.green(
+            'Successfully added ui prop in PrismaTables DynamicTable component in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to add ui prop in PrismaTables DynamicTable component in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
+      }
+
+      prismaTableString = format(prismaTableString, {
+        singleQuote: true,
+        semi: false,
+        trailingComma: 'all',
+        parser: 'babel-ts',
+      });
+      fs.writeFileSync(prismaTableLocation, prismaTableString);
+
+      resolve();
+    }, 500);
+  });
 
 const updatePrismaAdminForm = () =>
   new Promise((resolve, reject) => {
@@ -440,7 +509,8 @@ const updatePrismaAdminForm = () =>
       // Add props interface
       const oldFormPropsInterface = 'interface FormProps {';
       if (formString.includes(oldFormPropsInterface)) {
-        const newFormPropsInterface = oldFormPropsInterface + '\n ui?: any;';
+        const newFormPropsInterface =
+          oldFormPropsInterface + '\n ui?: any; parent?:any;';
         formString = formString.replace(
           oldFormPropsInterface,
           newFormPropsInterface,
@@ -457,11 +527,32 @@ const updatePrismaAdminForm = () =>
           ),
         );
       }
+      formString = 'import Header from "Components/Header";\n' + formString;
+
+      // add ui prop to Create Form
+      const formOld =
+        "{action.charAt(0).toUpperCase() + action.slice(1) + ' ' + model.name}";
+      const formNew =
+        '<Header parent={parent} ui={ui} data={data} model={modelName} action={action} />';
+      if (formString.includes(formOld)) {
+        formString = formString.replace(formOld, formNew);
+        console.log(
+          chalk.green(
+            'Successfully added ui prop in Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to add ui prop in Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
+      }
 
       // Add props
       const oldFormProps = 'const Form: React.FC<FormProps> = ({';
       if (formString.includes(oldFormProps)) {
-        const newFormProps = oldFormProps + '\n ui,';
+        const newFormProps = oldFormProps + '\n ui, parent,';
         formString = formString.replace(oldFormProps, newFormProps);
         console.log(
           chalk.green(
@@ -657,8 +748,28 @@ const updatePrismaAdminTable = () =>
       const tableBuffer = fs.readFileSync(tableLocation);
       let tableString = tableBuffer.toString();
 
-      // Add props interface
+      tableString = 'import Header from "Components/Header";\n' + tableString;
 
+      // add ui prop to PrismaTable
+      const headerOld = '{model?.name}';
+      const headerNew =
+        '<Header parent={parent} ui={ui} model={model} data={data} action="list" />';
+      if (tableString.includes(headerOld)) {
+        tableString = tableString.replace(headerOld, headerNew);
+        console.log(
+          chalk.green(
+            'Successfully added Header component in src/Components/PrismaAdmin/PrismaTable/index.tsx',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to add Header component in src/Components/PrismaAdmin/PrismaTable/index.tsx',
+          ),
+        );
+      }
+
+      // Add props interface
       if (tableString.includes('interface TableProps {')) {
         const newTablePropsInterface =
           'interface TableProps {' + '\n ui?: any;';
@@ -764,6 +875,46 @@ const updatePrismaAdminEditRecord = () =>
           ),
         );
       }
+
+      // add ui prop to Create Form
+      const formOld = '<Form';
+      const formNew = '<Form ui={ui} ';
+      if (editRecordString.includes(formOld)) {
+        editRecordString = editRecordString.replace(formOld, formNew);
+        console.log(
+          chalk.green(
+            'Successfully added ui prop in Form in src/Components/PrismaAdmin/PrismaTable/EditRecord.tsx',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to add ui prop in Form in src/Components/PrismaAdmin/PrismaTable/EditRecord.tsx',
+          ),
+        );
+      }
+
+      // add ui prop to Create Form
+      const dynamicTableOld = '<DynamicTable';
+      const dynamicTableNew = '<DynamicTable ui={ui} ';
+      if (editRecordString.includes(dynamicTableOld)) {
+        editRecordString = editRecordString.replace(
+          dynamicTableOld,
+          dynamicTableNew,
+        );
+        console.log(
+          chalk.green(
+            'Successfully added ui prop in Form in src/Components/PrismaAdmin/PrismaTable/EditRecord.tsx',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to add ui prop in Form in src/Components/PrismaAdmin/PrismaTable/EditRecord.tsx',
+          ),
+        );
+      }
+
       editRecordString = format(editRecordString, {
         singleQuote: true,
         semi: false,
@@ -786,84 +937,145 @@ const updatePrismaAdminDynamicTable = () =>
       );
       const dynamicTableBuffer = fs.readFileSync(dynamicTableLocation);
       let dynamicTableString = dynamicTableBuffer.toString();
-      dynamicTableString =
-        'import Header from "Components/Header";\n' + dynamicTableString;
 
-      // Edit Form in Modal
-      const createFormMatch = dynamicTableString.match(/<Form((?:[^<])*)\/>/g);
-      if (createFormMatch && createFormMatch.length > 0) {
-        const newCreateForm =
-          '<><Header parent={parent} ui={ui} data={record} model={model} type="create" />' +
-          createFormMatch[0] +
-          '</>';
+      // add ui prop to Create Form
+      const createFormOld = '<Form';
+      const createFormNew = '<Form ui={ui} parent={parent} ';
+      if (dynamicTableString.includes(createFormOld)) {
         dynamicTableString = dynamicTableString.replace(
-          createFormMatch[0],
-          newCreateForm,
+          createFormOld,
+          createFormNew,
         );
         console.log(
           chalk.green(
-            'Successfully added Header before Create Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+            'Successfully added ui prop in Create Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
           ),
         );
       } else {
         console.log(
           chalk.red(
-            'Failed to add Header before Create Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+            'Failed to add ui prop in Create Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
           ),
         );
       }
+
+      // add ui prop to EditRecord
+      const editRecordOld = '<EditRecord';
+      const editRecordNew = '<EditRecord ui={ui} ';
+      if (dynamicTableString.includes(editRecordOld)) {
+        dynamicTableString = dynamicTableString.replace(
+          editRecordOld,
+          editRecordNew,
+        );
+        console.log(
+          chalk.green(
+            'Successfully added ui prop in EditRecord in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to add ui prop in EditRecord in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
+      }
+
+      // add ui prop to Table
+      const tableOld = '<Table';
+      const tableNew = '<Table ui={ui} ';
+      if (dynamicTableString.includes(tableOld)) {
+        dynamicTableString = dynamicTableString.replace(tableOld, tableNew);
+        console.log(
+          chalk.green(
+            'Successfully added ui prop in Table in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
+      } else {
+        console.log(
+          chalk.red(
+            'Failed to add ui prop in Table in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+          ),
+        );
+      }
+
+      // dynamicTableString =
+      //   'import Header from "Components/Header";\n' + dynamicTableString;
+
+      // // Edit Form in Modal
+      // const createFormMatch = dynamicTableString.match(/<Form((?:[^<])*)\/>/g);
+      // if (createFormMatch && createFormMatch.length > 0) {
+      //   const newCreateForm =
+      //     '<><Header parent={parent} ui={ui} data={record} model={model} type="create" />' +
+      //     createFormMatch[0] +
+      //     '</>';
+      //   dynamicTableString = dynamicTableString.replace(
+      //     createFormMatch[0],
+      //     newCreateForm,
+      //   );
+      //   console.log(
+      //     chalk.green(
+      //       'Successfully added Header before Create Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+      //     ),
+      //   );
+      // } else {
+      //   console.log(
+      //     chalk.red(
+      //       'Failed to add Header before Create Form in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+      //     ),
+      //   );
+      // }
 
       // Edit EditRecord
-      const updateFormMatch = dynamicTableString.match(
-        /<EditRecord((?:[^<])*)\/>/g,
-      );
-      if (updateFormMatch && updateFormMatch.length > 0) {
-        const newUpdateForm =
-          '<><Header parent={parent} ui={ui} data={record} model={model} type="update" />' +
-          updateFormMatch[0] +
-          '</>';
-        dynamicTableString = dynamicTableString.replace(
-          updateFormMatch[0],
-          newUpdateForm,
-        );
+      // const updateFormMatch = dynamicTableString.match(
+      //   /<EditRecord((?:[^<])*)\/>/g,
+      // );
+      // if (updateFormMatch && updateFormMatch.length > 0) {
+      //   const newUpdateForm =
+      //     '<><Header parent={parent} ui={ui} data={record} model={model} type="update" />' +
+      //     updateFormMatch[0] +
+      //     '</>';
+      //   dynamicTableString = dynamicTableString.replace(
+      //     updateFormMatch[0],
+      //     newUpdateForm,
+      //   );
 
-        console.log(
-          chalk.green(
-            'Successfully added Header before EditRecord in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
-          ),
-        );
-      } else {
-        console.log(
-          chalk.red(
-            'Failed to add Header before EditRecord in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
-          ),
-        );
-      }
+      //   console.log(
+      //     chalk.green(
+      //       'Successfully added Header before EditRecord in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+      //     ),
+      //   );
+      // } else {
+      //   console.log(
+      //     chalk.red(
+      //       'Failed to add Header before EditRecord in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+      //     ),
+      //   );
+      // }
 
       // Edit Table
-      const listTableMatch = dynamicTableString.match(/<Table((?:[^<])*)\/>/g);
-      if (listTableMatch && listTableMatch.length > 0) {
-        const newListTable =
-          '<><Header parent={parent} ui={ui} data={record} model={model} type="list" />' +
-          listTableMatch[0] +
-          '</>';
-        dynamicTableString = dynamicTableString.replace(
-          listTableMatch[0],
-          newListTable,
-        );
+      // const listTableMatch = dynamicTableString.match(/<Table((?:[^<])*)\/>/g);
+      // if (listTableMatch && listTableMatch.length > 0) {
+      //   const newListTable =
+      //     '<><Header parent={parent} ui={ui} data={record} model={model} type="list" />' +
+      //     listTableMatch[0] +
+      //     '</>';
+      //   dynamicTableString = dynamicTableString.replace(
+      //     listTableMatch[0],
+      //     newListTable,
+      //   );
 
-        console.log(
-          chalk.green(
-            'Successfully added Header before Table in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
-          ),
-        );
-      } else {
-        console.log(
-          chalk.green(
-            'Failed to add Header before Table in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
-          ),
-        );
-      }
+      //   console.log(
+      //     chalk.green(
+      //       'Successfully added Header before Table in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+      //     ),
+      //   );
+      // } else {
+      //   console.log(
+      //     chalk.green(
+      //       'Failed to add Header before Table in src/Components/PrismaAdmin/PrismaTable/dynamicTable.tsx',
+      //     ),
+      //   );
+      // }
 
       // Add props interface
       const oldPropsInterfaceString = 'interface DynamicTableProps {';
@@ -928,6 +1140,7 @@ class Init extends Command {
     // await updatePrismaSchema();
     await updatePackageJson();
     await clonePrismaAdmin();
+    await updatePrismaTable();
     await updatePrismaAdminDynamicTable();
     await updatePrismaAdminForm();
     await updatePrismaAdminTable();

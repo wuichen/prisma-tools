@@ -91,7 +91,7 @@ const ExtraRootFieldSettings = ({ modelObject: model, role, field }) => {
   const tabs = countries.map((country) => {
     return {
       title: country.country_long,
-      code: country.country_short,
+      code: country.locale,
     };
   });
   const [currentPlugins, setCurrentPlugins] = useState(field.plugins);
@@ -149,7 +149,7 @@ const ExtraRootModelSettings = ({ modelObject: model, role }) => {
   const tabs = countries.map((country) => {
     return {
       title: country.country_long,
-      code: country.country_short,
+      code: country.locale,
     };
   });
   const [currentPlugins, setCurrentPlugins] = useState(model.plugins);

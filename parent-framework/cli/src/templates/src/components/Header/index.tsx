@@ -1,37 +1,70 @@
 import dynamic from 'next/dynamic';
 import React, { useContext } from 'react';
-import { TableContext } from 'components/PrismaAdmin/PrismaTable/Context';
-import { getDisplayName } from 'components/PrismaAdmin/PrismaTable/Table/utils';
+import { TableContext } from 'Components/PrismaAdmin/PrismaTable/Context';
+import { getDisplayName } from 'Components/PrismaAdmin/PrismaTable/Table/utils';
+import { FormattedMessage } from 'react-intl';
+
 export interface HeaderProps {
   model: string;
-  type: 'update' | 'create' | 'list';
+  action: 'update' | 'create' | 'list' | 'view';
   data?: any;
   ui?: any;
   parent?: { name: string; value: any; field: string };
 }
 
-const Header: React.FC<HeaderProps> = ({ ui, model, type, data, parent }) => {
+const Header: React.FC<HeaderProps> = ({ ui, model, action, data, parent }) => {
   const {
     schema: { models },
     pagesPath,
   } = useContext(TableContext);
-
+  const breadCrumbs = pagesPath.split('/');
   const modelObject = models.find((item) => item.id === model);
 
-  let Title, Description;
+  let titleId, titlePlaceholder, descriptionId, descriptionPlaceholder;
 
-  switch (type) {
+  // createTitle
+  // createDescription
+  // updateTitle
+  // updateDescription
+  // listTitle
+  // listDescription
+
+  switch (action) {
     case 'update':
-      Title = ui?.header?.update?.Title;
-      Description = ui?.header?.update?.Description;
+      if (parent) {
+        titleId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${parent.name}.form.${modelObject?.id}updateTitle`;
+        titlePlaceholder = ui?.header?.updateTitle;
+        descriptionId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${parent.name}.form.${modelObject?.id}updateDescription`;
+        descriptionPlaceholder = ui?.header?.updateDescription;
+      }
+      titleId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${modelObject?.id}updateTitle`;
+      titlePlaceholder = ui?.header?.updateTitle;
+      descriptionId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${modelObject?.id}updateDescription`;
+      descriptionPlaceholder = ui?.header?.updateDescription;
       break;
     case 'list':
-      Title = ui?.header?.list?.Title;
-      Description = ui?.header?.list?.Description;
+      if (parent) {
+        titleId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${parent.name}.dynamicTable.${modelObject?.id}updateTitle`;
+        titlePlaceholder = ui?.header?.updateTitle;
+        descriptionId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${parent.name}.dynamicTable.${modelObject?.id}updateDescription`;
+        descriptionPlaceholder = ui?.header?.updateDescription;
+      }
+      titleId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${modelObject?.id}listTitle`;
+      titlePlaceholder = ui?.header?.listTitle;
+      descriptionId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${modelObject?.id}listDescription`;
+      descriptionPlaceholder = ui?.header?.listDescription;
       break;
     case 'create':
-      Title = ui?.header?.create?.Title;
-      Description = ui?.header?.create?.Description;
+      if (parent) {
+        titleId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${parent.name}.form.${modelObject?.id}updateTitle`;
+        titlePlaceholder = ui?.header?.updateTitle;
+        descriptionId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${parent.name}.form.${modelObject?.id}updateDescription`;
+        descriptionPlaceholder = ui?.header?.updateDescription;
+      }
+      titleId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${modelObject?.id}createTitle`;
+      titlePlaceholder = ui?.header?.createTitle;
+      descriptionId = `Admin.${breadCrumbs[2]}.${breadCrumbs[3]}.${modelObject?.id}createDescription`;
+      descriptionPlaceholder = ui?.header?.createDescription;
       break;
 
     default:
@@ -40,33 +73,24 @@ const Header: React.FC<HeaderProps> = ({ ui, model, type, data, parent }) => {
 
   return (
     <div>
-      {type === 'update' && data && modelObject && (
+      <h4>
+        <FormattedMessage id={titleId} defaultMessage={titlePlaceholder} />
+      </h4>
+      <br />
+      <h6>
+        <FormattedMessage
+          id={descriptionId}
+          defaultMessage={descriptionPlaceholder}
+        />
+      </h6>
+
+      {(action === 'update' || action === 'view') && data && modelObject && (
         <>
           {parent ? (
             <h6>{getDisplayName(data, modelObject)}</h6>
           ) : (
             <h4>{getDisplayName(data, modelObject)}</h4>
           )}
-        </>
-      )}
-      {Title && (
-        <>
-          {parent ? (
-            <h6>
-              <Title />
-            </h6>
-          ) : (
-            <h4>
-              <Title />
-            </h4>
-          )}
-        </>
-      )}
-      {Description && (
-        <>
-          <p>
-            <Description />
-          </p>
         </>
       )}
     </div>

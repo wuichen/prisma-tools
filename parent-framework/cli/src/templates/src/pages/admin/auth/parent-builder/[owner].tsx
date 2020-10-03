@@ -37,7 +37,7 @@ export const FormBlockEdit = ({
   const tabs = countries.map((country) => {
     return {
       title: country.country_long,
-      code: country.country_short,
+      code: country.locale,
     };
   });
   const [updateModel] = useMutation(UPDATE_MODEL);
@@ -68,10 +68,10 @@ export const FormBlockEdit = ({
     },
   };
   countries.map((country) => {
-    if (country?.country_short) {
-      header[country.country_short] = {
-        title: `${country.country_short}${owner}${pagesPath.name}${modelField.id}Title`,
-        description: `${country.country_short}${owner}${pagesPath.name}${modelField.id}Description`,
+    if (country?.locale) {
+      header[country.locale] = {
+        title: `${country.locale}${owner}${pagesPath.name}${modelField.id}Title`,
+        description: `${country.locale}${owner}${pagesPath.name}${modelField.id}Description`,
       };
     }
   });
@@ -371,7 +371,7 @@ export const DynamicTableEdit = ({
   const tabs = countries.map((country) => {
     return {
       title: country.country_long,
-      code: country.country_short,
+      code: country.locale,
     };
   });
   const [updateModel] = useMutation(UPDATE_MODEL);
@@ -1517,14 +1517,14 @@ const AddNewPagesPath = ({
                 },
               };
               countries.map((country) => {
-                if (country?.country_short) {
-                  header[country.country_short] = {
-                    createTitle: `${country.country_short}${owner}${newPagesPath.name}${option.value}CreateTitle`,
-                    createDescription: `${country.country_short}${owner}${newPagesPath.name}${option.value}CreateDescription`,
-                    updateTitle: `${country.country_short}${owner}${newPagesPath.name}${option.value}UpdateTitle`,
-                    updateDescription: `${country.country_short}${owner}${newPagesPath.name}${option.value}UpdateDescription`,
-                    listTitle: `${country.country_short}${owner}${newPagesPath.name}${option.value}ListTitle`,
-                    listDescription: `${country.country_short}${owner}${newPagesPath.name}${option.value}ListDescription`,
+                if (country?.locale) {
+                  header[country.locale] = {
+                    createTitle: `${country.locale}${owner}${newPagesPath.name}${option.value}CreateTitle`,
+                    createDescription: `${country.locale}${owner}${newPagesPath.name}${option.value}CreateDescription`,
+                    updateTitle: `${country.locale}${owner}${newPagesPath.name}${option.value}UpdateTitle`,
+                    updateDescription: `${country.locale}${owner}${newPagesPath.name}${option.value}UpdateDescription`,
+                    listTitle: `${country.locale}${owner}${newPagesPath.name}${option.value}ListTitle`,
+                    listDescription: `${country.locale}${owner}${newPagesPath.name}${option.value}ListDescription`,
                   };
                 }
               });
